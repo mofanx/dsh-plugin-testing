@@ -1,0 +1,40 @@
+{
+  "name": "@your-scope/dsh-plugin-conformance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static conformance checker for DSH plugins: manifest + exports rules (DSH-C0xx). Not a DSH plugin.",
+  "type": "module",
+  "bin": {
+    "dsh-plugin-conformance": "./src/cli.mjs",
+    "dsh-plugin-version-check": "./src/cli-version.mjs",
+    "dsh-plugin-composition-check": "./src/cli-composition.mjs",
+    "dsh-plugin-conformance-all": "./src/run-all.mjs",
+    "dsh-plugin-api": "./src/cli-api.mjs"
+  },
+  "exports": {
+    ".": "./src/manifest.mjs",
+    "./manifest": "./src/manifest.mjs",
+    "./peer": "./src/peer.mjs",
+    "./composition": "./src/composition.mjs",
+    "./run-all": "./src/run-all.mjs",
+    "./semver": "./src/semver.mjs",
+    "./rules": "./src/rules.mjs",
+    "./api-surface": "./src/api-surface.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test": "node --test \"tests/**/*.spec.mjs\"",
+    "test:conformance": "node src/run-all.mjs",
+    "test:conformance:strict": "node src/run-all.mjs --strict"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "4.3.1"
+  }
+}

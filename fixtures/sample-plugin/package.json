@@ -1,0 +1,21 @@
+{
+  "name": "@sample/dsh-plugin-minimal",
+  "version": "1.0.0",
+  "description": "门禁自检夹具：按契约 C1–C3 构造的最小合法插件（仅静态分析用，不做启动冒烟）",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.4 <4.1.0",
+    "@deepseek-ai/dsh-llm": ">=0.2.0-rc.2 <0.3.0"
+  }
+}

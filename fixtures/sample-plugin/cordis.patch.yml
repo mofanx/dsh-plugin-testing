@@ -1,0 +1,4 @@
+- insert:
+    - id: sample-minimal
+      name: '@sample/dsh-plugin-minimal'
+      config: {}

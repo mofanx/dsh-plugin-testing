@@ -1,0 +1,6 @@
+{
+  "$comment": "门禁自检：合成插件 + 合成宿主，完全离线，无需真实 DSH 安装。从仓库根目录运行：node packages/conformance/src/run-all.mjs --config fixtures/conformance.selfcheck.json。预期 exit 0、1 warn（C030：夹具刻意不声明 engines.dsh）。",
+  "hostNodeModules": "./fixtures/fake-host",
+  "packages": ["./fixtures/sample-plugin"],
+  "profiles": []
+}

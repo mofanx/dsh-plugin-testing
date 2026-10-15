@@ -1,0 +1,7 @@
+{
+  "$comment": "静态门禁配置模板：复制为本机配置（如 conformance.local.json，建议加入 .gitignore），把尖括号路径换成实际值，然后 node src/run-all.mjs --config conformance.local.json",
+  "hostNodeModules": "<DSH 安装目录>/resources/app/node_modules",
+  "dshHome": "<用户 home>/.dsh",
+  "packages": ["<你的插件仓库>/packages/*"],
+  "profiles": ["<用户 home>/.dsh/profiles/desktop"]
+}

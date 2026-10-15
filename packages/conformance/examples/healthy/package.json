@@ -1,0 +1,18 @@
+{
+  "name": "@demo/dsh-plugin-healthy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal plugin that passes every static pass. Used as the green baseline for the gate command.",
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=22.19.0",
+    "dsh": "0.2.0-rc.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4"
+  }
+}
