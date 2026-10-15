@@ -79,7 +79,7 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 
 - **patch 里用 `group: true` 分组是合法写法**：载体（boot 解析为内建 `cordis:group`）**本来就没有模块名**，门禁不会因此报 `C053`（这类误报已修并有用例钉住）。被它包住的**子行**仍按普通行核对 —— 子行引用了没装的包照样报 `C053`；`group` 标了 `disabled: true` 时，其子行不再被视为已挂载。
 
-**peer 范围怎么写（实测教训，见第六节第 1 条）**：范围必须覆盖你要支持的每一条宿主线；运行时用 `includePrerelease: true`，单个范围 `>=0.2.0-rc.2 <0.3.0` 即可覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线，并集写法也可但非必需。
+**peer 范围怎么写（实测教训，见第六节第 1 条）**：范围必须覆盖你要支持的每一条宿主线，**而且要同时通过两种 semver 语义** —— 运行时预检用 `includePrerelease: true`，npm/pnpm 安装期用裸 semver。**推荐写并集** `>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0`：它在两种语义下都成立。单范围 `>=0.2.0-rc.2 <0.3.0` 虽然运行时放行，但**安装期会拒绝 `0.2.1-alpha.2`**（源码线开发流程会看到 peer 不满足）。
 
 ---
 
@@ -105,7 +105,7 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 
 **操作要点（每条都实测踩过）**：
 
-1. **peer 预发布准入**：运行时预检用 `semver.satisfies(..., { includePrerelease: true })`（预发布宿主版本无条件参与匹配），因此单个范围 `>=0.2.0-rc.2 <0.3.0` 即可同时覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线。用并集 `>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0` 亦可（更显式，运行时同样接受 `||`）；但**不要**只写 `>=0.2.1-alpha.2 <0.3.0` —— 它会遗漏 `0.2.0-rc.x` 线，触发 `C060`（belowMin）。
+1. **peer 预发布准入**：运行时预检用 `semver.satisfies(..., { includePrerelease: true })`（`dsh-app-boot/lib/index.js:300`，预发布宿主版本无条件参与匹配），因此**单范围** `>=0.2.0-rc.2 <0.3.0` 在**运行时**即可同时覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线。**但推荐仍写并集** `>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0` —— 运行时同样接受 `||`，且它在 **npm/pnpm 安装期的裸 semver** 下也成立（单范围在那一维会拒绝 `0.2.1-alpha.2`，源码线开发流程会看到 peer 不满足）。**不要**只写 `>=0.2.1-alpha.2 <0.3.0` —— 它会遗漏 `0.2.0-rc.x` 线，触发 `C060`（belowMin）。检查器只建模运行时那一维，所以它**不会**替你发现安装期问题。
 2. **`compatibility.json` 豁免键必须是全精确版本**（`@0.1.0-alpha.1`，不是 `@0.1.0`），否则静默失效。
 3. **patch 行相对路径以 patch 文件所在目录为基准**（宿主仓库 `cordis.patch.yml` 注释原文），不是仓库根 / cwd。
 4. **裸 `--json` 必须保留 `headless-runner`**：禁用它的 home 会让 `--json` **挂起而非退出**。

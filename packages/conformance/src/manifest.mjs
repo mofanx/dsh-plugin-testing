@@ -11,6 +11,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { isDshRuntimePeer } from './peer.mjs'
 import { severityOf } from './rules.mjs'
 import { isValidSemverRange } from './semver.mjs'
 import { loadRemovedApis, matchRemovedSubpath, removedSeverity } from './removed-apis.mjs'
@@ -26,6 +27,41 @@ import { loadRemovedApis, matchRemovedSubpath, removedSeverity } from './removed
 /** @param {unknown} value */
 function isStringArray(value) {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+/**
+ * The exact `engines.dsh` value to paste, derived from the package's own
+ * `@deepseek-ai/dsh-*` peer ranges.
+ *
+ * `DSH-C063` compares with `!==`, so the value must be *string-identical* to
+ * every dsh-* peer range. Telling the author that — and which string — turns a
+ * guessing game into a copy-paste; without it the first guess earns a second
+ * finding (this was hit for real: five packages sat on `C030` because nobody
+ * could tell which of the two peer families `engines.dsh` should mirror).
+ *
+ * @param {any} pkg parsed manifest
+ * @returns {string} suffix appended to the `DSH-C030` message
+ */
+function dshEngineSuggestion(pkg) {
+  const peers = pkg.peerDependencies
+  if (peers === null || typeof peers !== 'object') {
+    return '（本包没有 @deepseek-ai/dsh-* peer，可不声明；此项仅为提醒）'
+  }
+  const ranges = [
+    ...new Set(
+      Object.entries(peers)
+        .filter(([name]) => isDshRuntimePeer(name))
+        .map(([, range]) => range)
+        .filter((range) => typeof range === 'string'),
+    ),
+  ]
+  if (ranges.length === 0) {
+    return '（本包没有 @deepseek-ai/dsh-* peer，可不声明；此项仅为提醒）'
+  }
+  if (ranges.length === 1) {
+    return ` —— 建议写 "engines": { "dsh": ${JSON.stringify(ranges[0])} }（必须与 dsh-* peer 范围逐字一致，否则触发 DSH-C063）`
+  }
+  return ` —— 本包的 dsh-* peer 有 ${ranges.length} 种不同范围，而 engines.dsh 只能写一个，需先统一：${ranges.join(' / ')}`
 }
 
 /**
@@ -203,7 +239,7 @@ export function checkManifest(packageDir, options = {}) {
   const engines = pkg.engines
   const dshEngine = engines !== null && typeof engines === 'object' ? engines.dsh : undefined
   if (dshEngine === undefined) {
-    findings.push(finding('DSH-C030', 'engines.dsh 未声明，宿主兼容性无法表达'))
+    findings.push(finding('DSH-C030', `engines.dsh 未声明，宿主兼容性无法表达${dshEngineSuggestion(pkg)}`))
   } else if (typeof dshEngine !== 'string' || !isValidSemverRange(dshEngine)) {
     findings.push(finding('DSH-C031', `engines.dsh 不是合法的 SemVer 范围：${JSON.stringify(dshEngine)}`))
   }

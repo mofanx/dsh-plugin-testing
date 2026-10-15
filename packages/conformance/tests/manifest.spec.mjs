@@ -189,6 +189,53 @@ test('缺 engines.dsh → DSH-C030（warn）', () => {
   assert.equal(warn.severity, 'warn')
 })
 
+test('DSH-C030 直接给出 engines.dsh 该写的值（省掉猜错一轮）', () => {
+  // C063 用 `!==` 比较，所以引擎值必须与 dsh-* peer 逐字相等。作者此前只能猜，
+  // 猜错就多一条 error —— 消息里给出确切字符串把这件事变成复制粘贴。
+  const range = '>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0'
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-a',
+    version: '1.0.0',
+    exports: { '.': './lib/index.js', './package.json': './package.json' },
+    peerDependencies: { '@deepseek-ai/dsh-llm': range },
+  })
+  const warn = checkManifest(dir).find((f) => f.code === 'DSH-C030')
+  assert.ok(warn, '期望 DSH-C030')
+  assert.ok(warn.message.includes(JSON.stringify(range)), `消息应含确切范围，实际：${warn.message}`)
+  assert.match(warn.message, /DSH-C063/, '应点明不一致的后果，否则作者不知道为什么必须逐字一致')
+})
+
+test('DSH-C030 对 cordis-only 包不谎称要照抄 cordis 范围', () => {
+  // engines.dsh 描述的是 DSH 宿主，不是 cordis。cordis-only 包没有可照抄的
+  // dsh-* 范围，消息必须说清这一点，而不是把 cordis 范围当建议值。
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-a',
+    version: '1.0.0',
+    exports: { '.': './lib/index.js', './package.json': './package.json' },
+    peerDependencies: { '@deepseek-ai/cordis': '>=4.0.4 <4.1.0' },
+  })
+  const warn = checkManifest(dir).find((f) => f.code === 'DSH-C030')
+  assert.ok(warn, '期望 DSH-C030')
+  assert.match(warn.message, /没有 @deepseek-ai\/dsh-\* peer/)
+  assert.ok(!warn.message.includes('4.0.4'), `不应把 cordis 范围当建议值：${warn.message}`)
+})
+
+test('DSH-C030 在 dsh-* peer 范围不统一时要求先统一，而不是随便挑一个', () => {
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-a',
+    version: '1.0.0',
+    exports: { '.': './lib/index.js', './package.json': './package.json' },
+    peerDependencies: {
+      '@deepseek-ai/dsh-llm': '>=0.2.0-rc.2 <0.3.0',
+      '@deepseek-ai/dsh-tools': '>=0.2.1-alpha.2 <0.3.0',
+    },
+  })
+  const warn = checkManifest(dir).find((f) => f.code === 'DSH-C030')
+  assert.ok(warn, '期望 DSH-C030')
+  assert.match(warn.message, /2 种不同范围/)
+  assert.match(warn.message, /需先统一/)
+})
+
 test('engines.dsh 语法非法 → DSH-C031', () => {
   const dir = makePackage({ ...HOST_ONLY, engines: { dsh: 'abc' } })
   expectCode(dir, 'DSH-C031')

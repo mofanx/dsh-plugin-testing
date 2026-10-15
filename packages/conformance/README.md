@@ -101,6 +101,7 @@ npm test        # node --test "tests/**/*.spec.mjs"
 
 - **只依赖 `js-yaml` 与 `semver`**，并**钉死 js-yaml 4.3.1**（宿主同版本）。这不是随便选的：`!!js` 自定义标签的构造 API 在 js-yaml 5 里被 `defineScalarTag` 取代，用错大版本会让 patch 解析方言与 DSH boot 不一致 —— 而组合分析的全部结论都建立在这个方言上。
 - **SemVer 用官方 `semver@^7.8.5`（与 `dsh-app-boot` 同版本）**，且满足性判定显式对齐运行时的 `includePrerelease: true`。早期版本曾自实现 npm 子集（默认预发布准入规则），会在预发布宿主（`0.2.1-alpha.x`）上**误报**——运行时放行、检查器拒绝。`tests/version.spec.mjs` 里的预发布回归用例即为此钉住。
+- **已知建模边界：只建模"运行时预检"这一维**。npm/pnpm 的安装期 peer 解析用**裸 semver**，预发布只被同 `[major,minor,patch]` 元组的比较器接纳，所以 `>=0.2.0-rc.2 <0.3.0` 这类单范围**运行时放行、安装期被拒**（实测 semver 7.8.5）。检查器对这种情况不会报错 —— 推荐插件统一写**并集**（两种语义都成立）：`>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0`。
 - **组合算法是移植而非依赖**：`dshmarket/lib/check.js` 不在 `dshmarket` 的 `exports` 中，无法 `import`，因此 `composition.mjs` 复刻其 `composeLayers` 行为，并用测试锁定。
 - **不做的事**：不 boot DSH、不联网、不写盘。这是最便宜的一道门禁，也是团队最先撞上的那类错误。
 - **层栈必须完整**：`bundle 层 → <app>/cordis.patch.yml → profile patch → $DSH_HOME patch`。少一层就会把合法的 profile patch 误判成孤儿 —— 这个坑已踩过并有回归测试。

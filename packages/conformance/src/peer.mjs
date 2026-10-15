@@ -64,7 +64,7 @@ export function isHostCorePackage(name) {
 }
 
 /** Runtime-preflighted peers only (`@deepseek-ai/dsh` / `@deepseek-ai/dsh-*`). */
-function isDshRuntimePeer(name) {
+export function isDshRuntimePeer(name) {
   return name === DSH_RUNTIME_PEER_NAME || name.startsWith(DSH_RUNTIME_PEER_PREFIX)
 }
 
