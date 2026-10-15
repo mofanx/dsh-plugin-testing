@@ -8,7 +8,7 @@ DSH 插件的**静态一致性检查器**。运行时只依赖 `js-yaml`，且**
 
 ## 用法
 
-### 清单与 exports（T10，规则 `DSH-C001…C044`）
+### 清单与 exports（规则 `DSH-C001…C044`）
 
 ```bash
 node src/cli.mjs <packageDir...> [--json] [--strict]
@@ -16,7 +16,7 @@ node src/cli.mjs <packageDir...> [--json] [--strict]
 
 检查：`name`/`version`、`dsh.bundle.patch`（类型 / 是否存在 / 是否被 `exports` 覆盖）、`dsh.manifestVersion`、`dsh.client`（`platform` 必填、`inject` 类型）、`dsh.profile.bundles`、`engines.dsh`（存在性与 SemVer 语法）、`exports` 的 `.` / `./package.json` / `./client`，以及**已移除的 `./invariant`**。
 
-### 版本与 peer 契约（T12，规则 `DSH-C060…C065`）
+### 版本与 peer 契约（规则 `DSH-C060…C065`）
 
 ```bash
 node src/cli-version.mjs <packageDir...> \
@@ -26,10 +26,10 @@ node src/cli-version.mjs <packageDir...> \
 
 检查：peer 范围是否满足**宿主实际版本**（区分 `belowMin` / `aboveMax`）、peer 是否跨主版本、`engines.dsh` 与 peer 是否一致、不满足时**是否有 `compatibility.json` 豁免**、以及豁免条目是否**因插件版本变更而失效**。
 
-### 单一门禁命令（T13）—— CI 入口
+### 单一门禁命令 —— CI 入口
 
 ```bash
-npm run test:conformance          # 跑全部静态检查（T10 + T11 + T12）
+npm run test:conformance          # 跑全部静态检查（清单 + 组合装载 + 版本契约）
 npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
 ```
 
@@ -52,9 +52,9 @@ npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
 
 `--json` 输出机器可读结果；`--strict` 用于预发门禁。**error 与 warn 的分级是有意的**：`DSH-C030`（缺 `engines.dsh`）这类不阻断运行的问题不该卡住每一次 PR，但发布前必须清零。
 
-**判级取决于"是否被挂载"（T15）**：宿主的版本预检只求值它将要 import 的**行**。所以不满足的 peer 在**被挂载为 profile 行的包**上是 `DSH-C060`/`C064`（error，宿主会真的禁用它），在**支撑包**（从不作为行挂载）上只是 `DSH-C066`（warn）。给出的 `profile` 决定了这个判定；不给 profile 时按保守口径全部视为被挂载。
+**判级取决于"是否被挂载"**：宿主的版本预检只求值它将要 import 的**行**。所以不满足的 peer 在**被挂载为 profile 行的包**上是 `DSH-C060`/`C064`（error，宿主会真的禁用它），在**支撑包**（从不作为行挂载）上只是 `DSH-C066`（warn）。给出的 `profile` 决定了这个判定；不给 profile 时按保守口径全部视为被挂载。
 
-### 组合装载静态分析（T11，规则 `DSH-C050…C056`）
+### 组合装载静态分析（规则 `DSH-C050…C056`）
 
 ```bash
 node src/cli-composition.mjs "$env:DSH_HOME/profiles/desktop" \
@@ -70,7 +70,7 @@ node src/cli-composition.mjs "$env:DSH_HOME/profiles/desktop" \
 npm test        # node --test "tests/**/*.spec.mjs"
 ```
 
-测试套件在最后各有一个**完整性断言**：`rules.mjs` 中声明为 T10 / T11 / T12 的每个错误码都必须被至少一个用例触发，否则套件失败。这让规则表和测试不会悄悄脱节。
+测试套件在最后各有一个**完整性断言**：`rules.mjs` 中声明的每个错误码都必须被至少一个用例触发，否则套件失败。这让规则表和测试不会悄悄脱节。
 
 ## 设计取舍
 

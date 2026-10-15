@@ -2,11 +2,13 @@
 
 | 元信息 | 值 |
 |---|---|
-| 对应任务 | T01 |
+| 对应任务 | 维护者个人台账 |
 | 状态 | **草案**（未评审） |
 | 创建日期 | 2026-10-14 |
 | 依据 | 权威类型 `@deepseek-ai/dsh-package-manifest/src/types.ts`、DSH 自家 bundle 实测、`dsh-invariants` 实现、`docs/upgrade-guide/v0.2.0-rc.2/remove-runtime-invariants` |
-| 下游消费者 | T10 / T11 / T12 静态检查器（直接按第六节错误码实现） |
+| 下游消费者 | 本仓库 `packages/conformance` 的三类静态检查器（直接按第六节错误码实现） |
+
+> 注：文中可能出现的 T 编号对应维护者个人台账中的任务编号，团队阅读无需关心。
 
 ---
 
@@ -65,7 +67,7 @@
 | `engines.node` | 兼容的 Node.js 版本 |
 
 > ⚠️ **官方不校验**：手册原文——"当前安装器和加载器不强制检查 `dsh.manifestVersion` 或 `engines.dsh`；声明范围不会拒绝不兼容的宿主，也不会校验 SemVer 语法。"
-> → 这正是 **T12 必须自建** 的原因。
+> → 这正是 **版本契约检查必须自建** 的原因。
 
 ### 1.5 最小合法示例
 
@@ -216,11 +218,11 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 
 ---
 
-## 六、错误码表（**T10–T12 直接按此实现**）
+## 六、错误码表（**静态检查器直接按此实现**）
 
 每条规则一个稳定错误码，CI 报告与豁免说明均引用它。
 
-### 清单（T10）
+### 清单
 
 | 错误码 | 规则 | 级别 |
 |---|---|---|
@@ -237,7 +239,7 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 | `DSH-C030` | `engines.dsh` 缺失 | warn |
 | `DSH-C031` | `engines.dsh` SemVer 语法非法 | error |
 
-### exports（T10）
+### exports
 
 | 错误码 | 规则 | 级别 |
 |---|---|---|
@@ -247,7 +249,7 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 | `DSH-C043` | 有客户端半边但 `exports` 缺 `./client` | error |
 | `DSH-C044` | `exports` 含 `./invariant` | **error**（API 已移除） |
 
-### 组合装载（T11）
+### 组合装载
 
 | 错误码 | 规则 | 级别 |
 |---|---|---|
@@ -259,13 +261,13 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 | `DSH-C055` | patch 指向已移除的 id 或模块（如 invariants 五行） | error |
 | `DSH-C056` | 宿主**工具类**包出现在 `dependencies`（重复安装但通常无害；区别于 C050 的运行时核心包） | warn |
 
-> **真实的层栈顺序**（实测确认，T11 必须按此建模，否则会产生误报）：
+> **真实的层栈顺序**（实测确认，组合装载检查必须按此建模，否则会产生误报）：
 > `bundle 层`（按 `dsh.profile.bundles`）→ **`<app>/cordis.patch.yml`（应用/shell 层）** → `profile 的 cordis.patch.yml` → `$DSH_HOME/cordis.patch.yml`。
 > 漏掉应用层会让每一条指向 shell 插入 id 的 profile patch 都被误判为孤儿（实测案例：`computer-use-cua-driver-native` 由 `resources/app/cordis.patch.yml` 插入）。
 >
 > **C050 与 C056 的边界**：运行时核心包取 DSH 自身的 curated 清单（即 `dshmarket/lib/check.js` 的种子 —— `dsh-base`/`dsh-tools`/`cordis`/`dsh-agent` 等），遮蔽它们会真正打断宿主；其余 `@deepseek-ai/dsh-*` 叶子工具包（如 `dsh-util-values`、`dsh-atomic-write`）的重复只记为 warn。
 
-### 版本契约（T12）
+### 版本契约
 
 | 错误码 | 规则 | 级别 |
 |---|---|---|
