@@ -244,6 +244,7 @@ DSH 可以装"插件"来扩展能力。这个仓库是插件**交付给用户之
 | 测试 / CI 负责人 | [`../packages/conformance/README.md`](../packages/conformance/README.md) | 完整规则清单（35 条）、退出码含义 |
 | 要让 CI 跑真实 DSH | [`ci-real-host.md`](ci-real-host.md) | 三个环境变量的要求、接入步骤、版本影响 |
 | 想知道"为什么这么定" | [`contract-v1.md`](contract-v1.md) | 团队契约 v1 与每条规则的依据 |
+| 想确认它**真的有用** | [`validation-report.md`](validation-report.md) | 在一个真实插件仓库上跑出的 14 条真实问题、0 误报 |
 | 想看改了什么 | [`CHANGELOG.md`](CHANGELOG.md) | 按日期的变更记录 |
 | 要收集插件体检数据 | [`../templates/`](../templates/) | 体检卡 / 兼容性矩阵模板 |
 

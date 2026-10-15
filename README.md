@@ -10,7 +10,7 @@ DSH 插件测试基建 monorepo。
 |---|---|
 | `packages/testkit/` | 测试工具包：一次性隔离 home、keyless 回放、with-key 车道 |
 | `packages/conformance/` | 静态门禁 CLI（`DSH-C0xx` 规则族）+ API 用量核对 + 宿主基线生成 + 移除 API 数据表（`removed-apis.json`） |
-| `docs/` | **一页纸汇报（管理层）** + 一页看懂（非技术入门）+ 团队指南 + 契约 v1 + CI 真实宿主接入 + 变更记录 |
+| `docs/` | **一页纸汇报（管理层）** + 一页看懂（非技术入门）+ 团队指南 + 契约 v1 + CI 真实宿主接入 + **真实验证报告** + 变更记录 |
 | `templates/` | 体检卡 / 兼容性矩阵模板 |
 | `baselines/` | **历史**宿主的 API 基线归档（当前宿主活动基线在 `packages/conformance/api-baseline.json`） |
 | `fixtures/` | 门禁自检夹具（合成插件 + 合成宿主，完全离线） |
