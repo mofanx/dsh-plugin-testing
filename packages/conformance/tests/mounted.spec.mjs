@@ -47,7 +47,8 @@ function makePlugin(name, { peerRange = '>=0.2.1-alpha.2 <0.3.0' } = {}) {
         version: '0.1.0-alpha.1',
         type: 'module',
         exports: { '.': './lib/index.js', './package.json': './package.json' },
-        engines: { node: '>=22.19.0', dsh: '0.2.1-alpha.2' },
+        // engines.dsh 与 peer 保持一致，避免夹具引入 C063 噪音，只暴露 peer 缺陷。
+        engines: { node: '>=22.19.0', dsh: peerRange },
         peerDependencies: { '@deepseek-ai/dsh-llm': peerRange },
       },
       null,
@@ -123,6 +124,36 @@ test('支撑包：同样的 peer 不满足 → C066 warn，且不报 C060/C064',
   for (const code of codes) exercised.add(code)
   assert.deepEqual(codes, ['DSH-C066'], `应只有 C066，实际 [${codes.join(', ')}]`)
   assert.equal(findings[0].severity, 'warn')
+})
+
+test('支撑包也报 C062/C063：清单形态缺陷不被 mounted 状态跳过', () => {
+  // P1-4 回归：C062（跨主版本范围）与 C063（engines 与 peer 不一致）是清单形态缺陷，
+  // 与"是否被挂载为行"无关。修复前支撑包提前 return 会漏掉它们。
+  const directory = makePlugin('@demo/pkg-support-defective', { peerRange: '>=1.0.0 <3.0.0' })
+  // 手工把 engines.dsh 改得与 peer 不一致，制造 C063。
+  writeFileSync(
+    join(directory, 'package.json'),
+    JSON.stringify(
+      {
+        name: '@demo/pkg-support-defective',
+        version: '0.1.0-alpha.1',
+        type: 'module',
+        exports: { '.': './lib/index.js', './package.json': './package.json' },
+        engines: { node: '>=22.19.0', dsh: '0.2.0-rc.2' },
+        peerDependencies: { '@deepseek-ai/dsh-llm': '>=1.0.0 <3.0.0' },
+      },
+      null,
+      2,
+    ),
+  )
+  const { hostVersions } = makeHost()
+  const findings = checkPeerContract(directory, { hostVersions, mountedNames: new Set(['@demo/pkg-mounted']) })
+  const codes = findings.map((f) => f.code)
+  for (const code of codes) exercised.add(code)
+  assert.ok(codes.includes('DSH-C066'), `支撑包应报 C066，实际 [${codes.join(', ')}]`)
+  assert.ok(codes.includes('DSH-C062'), `支撑包也应报 C062，实际 [${codes.join(', ')}]`)
+  assert.ok(codes.includes('DSH-C063'), `支撑包也应报 C063，实际 [${codes.join(', ')}]`)
+  assert.ok(!codes.includes('DSH-C060'), `支撑包不应报 C060，实际 [${codes.join(', ')}]`)
 })
 
 test('不提供 profile 时保持保守默认：不满足 peer 仍按 C060 error', () => {

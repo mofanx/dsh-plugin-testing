@@ -1,7 +1,7 @@
 /**
  * T10 — manifest and `exports` conformance pass.
  *
- * Implements rules DSH-C001…C044 from `dsh-plugin-contract-v1.md` §6. Pure
+ * Implements rules DSH-C001…C044 from `docs/contract-v1.md` §6. Pure
  * filesystem + JSON reading: no DSH boot, no network, no writes. This is the
  * cheapest gate in the suite (sub-second) and the one that catches the
  * failures teams hit first.
@@ -13,6 +13,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { severityOf } from './rules.mjs'
 import { isValidSemverRange } from './semver.mjs'
+import { loadRemovedApis, matchRemovedSubpath, removedSeverity } from './removed-apis.mjs'
 
 /**
  * @typedef {object} Finding
@@ -30,10 +31,11 @@ function isStringArray(value) {
 /**
  * @param {string} code
  * @param {string} message
+ * @param {'error' | 'warn'} [severity] override the rule table's static severity
  * @returns {Finding}
  */
-function finding(code, message) {
-  return { code, severity: severityOf(code), message }
+function finding(code, message, severity = severityOf(code)) {
+  return { code, severity, message }
 }
 
 /** @param {string} text */
@@ -81,11 +83,18 @@ function exportCovers(keys, relPath) {
  * Check one package directory against the T10 manifest and exports rules.
  *
  * @param {string} packageDir directory containing the plugin's `package.json`
+ * @param {{ dshRuntimeVersion?: string, removedApis?: import('./removed-apis.mjs').RemovedApi[] | null }} [options]
+ *   `dshRuntimeVersion` grades removed-API findings against the host version the
+ *   plugin is judged against (before removal → warn, at/after → error).
  * @returns {Finding[]} findings in rule order; empty means the package passes
  */
-export function checkManifest(packageDir) {
+export function checkManifest(packageDir, options = {}) {
   /** @type {Finding[]} */
   const findings = []
+  const dshRuntimeVersion = options.dshRuntimeVersion
+  // Tests inject a custom table; production loads the committed default.
+  const removedApis =
+    options.removedApis !== undefined ? { removed: options.removedApis ?? [] } : loadRemovedApis()
   const manifestPath = join(packageDir, 'package.json')
 
   /** @type {any} */
@@ -201,9 +210,22 @@ export function checkManifest(packageDir) {
     findings.push(finding('DSH-C043', "声明了客户端半边但 exports 缺 './client'"))
   }
   for (const key of keys) {
-    if (key === './invariant' || key.endsWith('/invariant')) {
-      findings.push(finding('DSH-C044', `exports 暴露了已移除的子路径：${key}（该 API 在 0.2.1 线已移除）`))
-    }
+    const removal = matchRemovedSubpath(key, removedApis)
+    if (removal === null) continue
+    const severity = removedSeverity(removal, dshRuntimeVersion)
+    const versionContext =
+      dshRuntimeVersion === undefined
+        ? `在 ${removal.removedIn} 起移除`
+        : severity === 'warn'
+          ? `在 ${removal.removedIn} 起移除；当前宿主 ${dshRuntimeVersion} 早于此版本，暂可用但迁移后将无法加载`
+          : `在 ${removal.removedIn} 起移除；当前宿主 ${dshRuntimeVersion} 已不含此子路径`
+    findings.push(
+      finding(
+        removal.rule,
+        `exports 暴露了已移除的子路径：${key}（${versionContext}）${removal.note ? `；${removal.note}` : ''}`,
+        severity,
+      ),
+    )
   }
 
   return findings

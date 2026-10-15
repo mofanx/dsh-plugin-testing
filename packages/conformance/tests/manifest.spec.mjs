@@ -237,14 +237,82 @@ test("exports 暴露已移除的 './invariant' → DSH-C044", () => {
   expectCode(dir, 'DSH-C044')
 })
 
+/** 一个导出 `./invariant` 的插件，用于分级断言。 */
+function invariantPackage() {
+  return makePackage({
+    ...HOST_ONLY,
+    exports: {
+      '.': './lib/index.js',
+      './invariant': './lib/invariant.js',
+      './package.json': './package.json',
+    },
+  })
+}
+
+test('C044 阈值分级：未提供宿主版本 → 保守按 error', () => {
+  const finding = checkManifest(invariantPackage()).find((f) => f.code === 'DSH-C044')
+  assert.ok(finding, '期望 DSH-C044')
+  assert.equal(finding.severity, 'error')
+})
+
+test('C044 阈值分级：宿主早于移除版本 → warn（尚可用但迁移后失效）', () => {
+  const finding = checkManifest(invariantPackage(), { dshRuntimeVersion: '0.2.0-rc.2' }).find(
+    (f) => f.code === 'DSH-C044',
+  )
+  assert.ok(finding, '期望 DSH-C044')
+  assert.equal(finding.severity, 'warn')
+  assert.match(finding.message, /0\.2\.0-rc\.2 早于此版本/)
+})
+
+test('C044 阈值分级：宿主达移除版本 → error', () => {
+  const finding = checkManifest(invariantPackage(), { dshRuntimeVersion: '0.2.1-alpha.2' }).find(
+    (f) => f.code === 'DSH-C044',
+  )
+  assert.ok(finding, '期望 DSH-C044')
+  assert.equal(finding.severity, 'error')
+  assert.match(finding.message, /0\.2\.1-alpha\.2 已不含此子路径/)
+})
+
+test('C044 数据驱动：空表不再报（证明移除清单非硬编码）', () => {
+  const codes = checkManifest(invariantPackage(), { removedApis: [] }).map((f) => f.code)
+  assert.ok(!codes.includes('DSH-C044'), `空表不应触发 C044，实际 [${codes.join(', ')}]`)
+})
+
+test('C044 数据驱动：新增一条移除项即可扩展，无需改代码', () => {
+  const dir = makePackage({
+    ...HOST_ONLY,
+    exports: {
+      '.': './lib/index.js',
+      './legacy-api': './lib/legacy.js',
+      './package.json': './package.json',
+    },
+  })
+  const injected = [
+    {
+      id: 'legacy-api',
+      kind: 'subpath',
+      match: 'exact',
+      pattern: './legacy-api',
+      removedIn: '0.3.0',
+      rule: 'DSH-C044',
+      note: '假设未来 0.3.0 移除 legacy-api',
+    },
+  ]
+  const finding = checkManifest(dir, { removedApis: injected }).find((f) => f.code === 'DSH-C044')
+  assert.ok(finding, '注入的移除项应触发 DSH-C044')
+  assert.equal(finding.severity, 'error')
+})
+
 // --- semver syntax -------------------------------------------------------
 
 test('SemVer 范围语法判定', () => {
   // 部分版本（X-range）按 npm 语义合法，不得比 npm 更严而误报。
-  for (const valid of ['0.2.0-rc.2', '>=0.2.1-alpha.2 <0.3.0', '~4.0.4', '^1.2.3', '1.x', '1.2', '0.2', '*', '1.2.3 || >=2.0.0']) {
+  // 带首尾空格的 range 由官方 semver 自动 trim 后接受，与运行时行为一致。
+  for (const valid of ['0.2.0-rc.2', '>=0.2.1-alpha.2 <0.3.0', '~4.0.4', '^1.2.3', '1.x', '1.2', '0.2', '*', '1.2.3 || >=2.0.0', ' 1.2.3', '>=0.2.0 ']) {
     assert.equal(isValidSemverRange(valid), true, `应接受 ${JSON.stringify(valid)}`)
   }
-  for (const invalid of ['abc', '>=', '1.2.3.4', '', ' 1.2.3', '>=0.2.0 ']) {
+  // 空字符串在 semver.validRange 里会退化为 '*'，但 engines.dsh 空值应视为"漏填"而非"匹配一切"。
+  for (const invalid of ['abc', '>=', '1.2.3.4', '']) {
     assert.equal(isValidSemverRange(invalid), false, `应拒绝 ${JSON.stringify(invalid)}`)
   }
 })

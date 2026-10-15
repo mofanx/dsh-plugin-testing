@@ -67,10 +67,15 @@ test('SemVer 满足性：与 npm 语义一致', () => {
   }
 })
 
-test('预发布准入规则：无同元组预发布比较器时不匹配', () => {
-  // npm 文档行为：1.2.3-beta 不满足 >=1.0.0，因为没有 1.2.3 上的预发布比较器。
-  assert.equal(satisfies('1.2.3-beta', '>=1.0.0'), false)
+test('预发布准入规则：与运行时一致（includePrerelease: true）', () => {
+  // 运行时 evaluatePluginCompatibility 用 semver.satisfies(..., { includePrerelease: true })，
+  // 预发布宿主版本无条件参与匹配，不要求范围内有同元组预发布比较器。
+  // 自实现的 npm 默认规则（require 同元组预发布比较器）会在这里误报。
+  assert.equal(satisfies('1.2.3-beta', '>=1.0.0'), true)
   assert.equal(satisfies('1.2.3-beta', '>=1.2.3-alpha'), true)
+  // P1-1 回归：预发布宿主 0.2.1-alpha.2 满足无预发布元组的范围 >=0.2.0 <0.3.0。
+  // 这是团队目标线（源码线 0.2.1-alpha.x）上最易误报的形态。
+  assert.equal(satisfies('0.2.1-alpha.2', '>=0.2.0 <0.3.0'), true)
 })
 
 test('diagnoseRange 区分 belowMin 与 aboveMax', () => {
@@ -107,6 +112,24 @@ test('有匹配豁免时不报 DSH-C064', () => {
   assert.ok(!codes.includes('DSH-C064'), '豁免命中时不应报 DSH-C064')
 })
 
+test('cordis 系 peer 不满足宿主 → DSH-C057（warn，且不报 C060/C064）', () => {
+  // 运行时预检只检查 @deepseek-ai/dsh 与 dsh-* peer；cordis 走 npm 解析。
+  // 所以 cordis 不满足应报独立的 warn（C057），而非阻断性的 C060/C064。
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-cordis-mismatch',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/cordis': '>=4.0.5-alpha.1 <4.1.0' },
+  })
+  const codes = codesOf(dir, { hostVersions: { '@deepseek-ai/cordis': '4.0.4' } })
+  assert.ok(codes.includes('DSH-C057'), `期望 C057，实际 [${codes.join(', ')}]`)
+  assert.ok(!codes.includes('DSH-C060'), 'cordis 不满足不应报 C060')
+  assert.ok(!codes.includes('DSH-C064'), 'cordis 不满足不应报 C064')
+  const finding = checkPeerContract(dir, { hostVersions: { '@deepseek-ai/cordis': '4.0.4' } }).find(
+    (item) => item.code === 'DSH-C057',
+  )
+  assert.equal(finding?.severity, 'warn')
+})
+
 test('宿主版本过新 → DSH-C061（warn）', () => {
   const dir = makePackage({
     name: '@scope/dsh-plugin-old',
@@ -129,6 +152,36 @@ test('peer 范围跨主版本 → DSH-C062', () => {
     peerDependencies: { '@deepseek-ai/dsh-llm': '>=1.0.0 <3.0.0' },
   })
   expectCode(dir, { hostVersions: { '@deepseek-ai/dsh-llm': '2.0.0' } }, 'DSH-C062')
+})
+
+test('C062 不误报：单 major 范围与 0.x 线范围都不算跨主版本', () => {
+  // >=1.0.0 <2.0.0 是 ^1.0.0 的展开，合法单 major 范围。
+  const single = makePackage({
+    name: '@scope/dsh-plugin-single-major',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=1.0.0 <2.0.0' },
+  })
+  const singleCodes = codesOf(single, { hostVersions: { '@deepseek-ai/dsh-llm': '1.5.0' } })
+  assert.ok(!singleCodes.includes('DSH-C062'), `单 major 范围不应报 C062，实际 [${singleCodes.join(', ')}]`)
+
+  // 契约 §3.2 曾把 >=0.2.1-alpha.2 <0.3.0 列为"跨主版本"，但它 major 恒为 0，
+  // 属于 0.x 线内范围，真正的问题（遗漏 0.2.0-rc.x）由 C060 belowMin 捕获。
+  const zerox = makePackage({
+    name: '@scope/dsh-plugin-zerox',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=0.2.1-alpha.2 <0.3.0' },
+  })
+  const zeroxCodes = codesOf(zerox, { hostVersions: { '@deepseek-ai/dsh-llm': '0.2.1-alpha.2' } })
+  assert.ok(!zeroxCodes.includes('DSH-C062'), `0.x 线范围不应报 C062，实际 [${zeroxCodes.join(', ')}]`)
+
+  // 显式并集跨两个 major 是诚实的分线声明，也不应报 C062。
+  const union = makePackage({
+    name: '@scope/dsh-plugin-union',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=1.0.0 <2.0.0 || >=2.0.0 <3.0.0' },
+  })
+  const unionCodes = codesOf(union, { hostVersions: { '@deepseek-ai/dsh-llm': '1.5.0' } })
+  assert.ok(!unionCodes.includes('DSH-C062'), `显式并集不应报 C062，实际 [${unionCodes.join(', ')}]`)
 })
 
 test('engines.dsh 与 peer 范围不一致 → DSH-C063', () => {

@@ -20,6 +20,8 @@
 
 **总原则（为什么长这样）**：插件的被测对象很多时候是"模型的行为"，不是纯函数。所以测试分两条车道 —— **keyless**（mock/回放，进 PR 门禁，确定性）与 **with-key**（真模型，夜间 / eval，不阻塞 PR）；非确定性通过"录制一次 → 回放无限次"固化成资产。
 
+**版本锁定约定**：`testkit` 钉住的支持包版本 **= 目标宿主版本**。当前 `@deepseek-ai/dsh-llm-replay` 与 `@deepseek-ai/dsh-session-snapshot` 均为 `0.2.0-rc.2`（与打包桌面宿主一致）。宿主升级时**同步**升这两个支持包，否则回放 patch / 录制 fixture 的 session 世代可能对不上而悄悄失效。这条锁定写死在 `packages/testkit/package.json`，不随主仓源码线（`0.2.1-alpha.x`）自动漂移。
+
 ---
 
 ## 二、新插件接入：三步
@@ -63,13 +65,14 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 |---|---|---|
 | 清单 / exports（C0xx 前段） | `dsh.bundle.patch` 存在性、`exports` 完整性、客户端声明 | 缺 `./package.json` 导出 |
 | 组合装载（`DSH-C050…C056`） | 把宿主包放进 `dependencies` 的遮蔽模式 | 宿主**核心包**被遮蔽（error）；工具包重复安装（warn） |
-| 版本 / peer（`DSH-C060…C066`） | peer 范围 vs 宿主实际版本、豁免有效性 | `C060` belowMin / `C064` 不满足且无豁免 |
+| 版本 / peer（`DSH-C057`、`DSH-C060…C066`） | peer 范围 vs 宿主实际版本、豁免有效性、cordis 系 | `C060` belowMin / `C064` 不满足且无豁免 |
 
 - **判级取决于"是否被挂载"**：宿主只对它将要 import 的**行**做版本预检。不满足的 peer 在被挂载为 profile 行的包上是 error（宿主会真的禁用它），在从不挂载的支撑包上只是 warn。
 - **退出码**：`0` 通过；`1` 有 error（`--strict` 下 warn 也算）；`2` 用法错误 / 无检查目标。
 - error/warn 分级是有意的：`DSH-C030`（缺 `engines.dsh`）这类不阻断运行的问题不卡 PR，但发布前必须清零。
+- **移除 API 数据表**（`packages/conformance/removed-apis.json`）：宿主随版本移除的 API（当前：`./invariant` 子路径）**不硬编码进规则**。`DSH-C044` 读表匹配，并按宿主版本分级——未指定宿主 → error；宿主早于 `removedIn` → warn；达/过 → error。**未来新增同类移除，只在表里追加一条数据，零代码改动**（表正确性由测试用 `api-baseline.json` 交叉验证兜底）。
 
-**peer 范围怎么写（实测教训，见第六节第 1 条）**：范围必须覆盖你要支持的每一条宿主线；跨预发布线时单一范围做不到，用并集。
+**peer 范围怎么写（实测教训，见第六节第 1 条）**：范围必须覆盖你要支持的每一条宿主线；运行时用 `includePrerelease: true`，单个范围 `>=0.2.0-rc.2 <0.3.0` 即可覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线，并集写法也可但非必需。
 
 ---
 
@@ -95,7 +98,7 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 
 **操作要点（每条都实测踩过）**：
 
-1. **peer 预发布元组规则**：SemVer 预发布只被同元组比较器接纳。宿主 `0.2.0-rc.x` 与源码线 `0.2.1-alpha.x` 分属两个元组，单一范围无法同时覆盖 —— 跨线支持用并集 `>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0`（运行时预检已实测接受 `||`）。
+1. **peer 预发布准入**：运行时预检用 `semver.satisfies(..., { includePrerelease: true })`（预发布宿主版本无条件参与匹配），因此单个范围 `>=0.2.0-rc.2 <0.3.0` 即可同时覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线。用并集 `>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0` 亦可（更显式，运行时同样接受 `||`）；但**不要**只写 `>=0.2.1-alpha.2 <0.3.0` —— 它会遗漏 `0.2.0-rc.x` 线，触发 `C060`（belowMin）。
 2. **`compatibility.json` 豁免键必须是全精确版本**（`@0.1.0-alpha.1`，不是 `@0.1.0`），否则静默失效。
 3. **patch 行相对路径以 patch 文件所在目录为基准**（宿主仓库 `cordis.patch.yml` 注释原文），不是仓库根 / cwd。
 4. **裸 `--json` 必须保留 `headless-runner`**：禁用它的 home 会让 `--json` **挂起而非退出**。
@@ -122,6 +125,7 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 ## 六、边界与分工
 
 - **静态导入扫描 ≠ 运行时属性访问**：`check-plugin-imports.mjs` 只核对模块导出；`ctx.llm.*` / `ctx.tools.*` 的运行时面必须由真实启动（组合测试）覆盖。
+- **移除 API 数据表的维护职责**：宿主每次移除 API，由**测试负责人**在 `removed-apis.json` 追加一条。`removedIn` **一律以 `@deepseek-ai/dsh-app-boot` 的 `package.json` `version` 为准**（机制见 contract-v1 §〇，web/桌面两端同源但取值分端：桌面打包版 `0.2.0-rc.2`，主仓源码 `0.2.1-alpha.2`），并同步该端宿主基线归档；`api-baseline.json` 交叉验证测试会把写错的数据表直接变红。**基线采集时机（已定，勿提前采）**：0.2.1-alpha.2 线当前无真实打包/发布宿主——主仓开发工作区的 node_modules 不代表真实宿主，故暂不生成该线基线；待 web 端确认切到 0.2.1 线（有对应打包产物）后，再从真实产物生成归档并交叉验证。
 - **工具的外部依赖路径**（外部引擎 / 客户端桥）属于活体验证范畴，回放车道只覆盖确定性路径。
 - **evals（模型行为评测维度）**：统计指标，**不阻塞 PR**；夜间车道跑。
 - **UI**：交给 Playwright，不用插件测 UI。

@@ -21,15 +21,20 @@ import {
   replayPatch,
 } from '../src/replay.mjs'
 
-/** Packaged launcher; override to test another installation. */
+/** Packaged launcher; override with `DSH_BIN` on another install. */
 const DSH_BIN =
   process.env.DSH_BIN ??
   'D:\\Program Files\\DSH NEXT\\resources\\app\\node_modules\\@deepseek-ai\\dsh\\lib\\bin.js'
 
 const hasLauncher = existsSync(DSH_BIN)
 
-/** A committed fixture that carries an explicit `version` (v3 generation). */
+/**
+ * Session-snapshot fixtures from the harness source checkout. Override with
+ * `DSH_FIXTURES` (path to `record-suite`) on another machine; the integration
+ * cases skip themselves when either the launcher or the fixtures are absent.
+ */
 const HARNESS_FIXTURES =
+  process.env.DSH_FIXTURES ??
   'D:\\projects\\nodejs\\deepseek-harness\\packages\\test-support\\session-snapshot\\tests\\fixtures\\record-suite'
 const v3Fixture = `${HARNESS_FIXTURES}\\rec-pin\\session.v3.jsonl`
 /** The v0 projection deliberately omits `version`. */

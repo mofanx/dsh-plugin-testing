@@ -2,7 +2,7 @@
  * Stable rule codes for the DSH plugin conformance checker.
  *
  * These codes are the contract between the checker, CI reports, and any
- * exemption write-up. They mirror `dsh-plugin-contract-v1.md` §6 and must not
+ * exemption write-up. They mirror `docs/contract-v1.md` §6 and must not
  * be renumbered once shipped — add new codes instead.
  *
  * @module dsh-plugin-conformance/rules
@@ -41,7 +41,7 @@ export const RULES = {
   'DSH-C041': { severity: 'error', title: "exports 缺 './package.json'", task: 'T10' },
   'DSH-C042': { severity: 'error', title: 'dsh.bundle.patch 的文件未被 exports 覆盖', task: 'T10' },
   'DSH-C043': { severity: 'error', title: "有客户端半边但 exports 缺 './client'", task: 'T10' },
-  'DSH-C044': { severity: 'error', title: "exports 含 './invariant'（该 API 在 0.2.1 线已移除）", task: 'T10' },
+  'DSH-C044': { severity: 'error', title: 'exports 含已移除的子路径（数据驱动，按宿主版本分级）', task: 'T10' },
 
   // --- composition (T11, declared here so reports can reference them) ----
   'DSH-C050': { severity: 'error', title: '宿主核心包出现在 dependencies', task: 'T11' },
@@ -53,6 +53,7 @@ export const RULES = {
   'DSH-C056': { severity: 'warn', title: '宿主工具类包出现在 dependencies（重复安装但通常无害）', task: 'T11' },
 
   // --- version contract (T12) -------------------------------------------
+  'DSH-C057': { severity: 'warn', title: 'cordis 系 peer 范围不满足宿主实际版本（不被运行时预检，但会引发 hoist 遮蔽风险）', task: 'T12' },
   'DSH-C060': { severity: 'error', title: 'peer 范围不满足宿主实际版本（belowMin）', task: 'T12' },
   'DSH-C061': { severity: 'warn', title: 'peer 范围不满足宿主实际版本（aboveMax）', task: 'T12' },
   'DSH-C062': { severity: 'error', title: 'peer 使用了禁止的跨主版本大范围', task: 'T12' },

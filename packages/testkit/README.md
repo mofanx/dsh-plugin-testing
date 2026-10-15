@@ -62,7 +62,7 @@ try {
 
 启动器会从**安装的依赖图与有序 bundle 依赖图**算出一份不可变的 runtime resolution，并装进 Node 的 ESM/CJS 解析器（`dsh-app-boot` README：「挂载 profile 条目前…」）。所以 bundle 从 **DSH 安装**解析，而不是从 profile。
 
-已实测：一个只有 `profiles/test/package.json` 的 home 能成功 boot 并输出完整 `--dump-config`。这让隔离的代价降到接近零 —— **不需要 pnpm install**。
+已实测：一个只有 `profiles/test/package.json` 的 home 能成功 boot 并输出完整 `--dump-config`。这让隔离的代价降到接近零 —— **不需要 `npm install`**。
 
 ## 自测
 

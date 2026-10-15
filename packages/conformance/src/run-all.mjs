@@ -23,7 +23,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkManifest } from './manifest.mjs'
-import { checkPeerContract, readExemptions, readHostVersions } from './peer.mjs'
+import { checkPeerContract, readExemptions, readHostVersions, resolveDshVersion } from './peer.mjs'
 import { checkComposition, collectMountedPackageNames } from './composition.mjs'
 import { severityOf, titleOf } from './rules.mjs'
 
@@ -117,6 +117,7 @@ export function runAll(config) {
         : null)
 
   const hostVersions = hostNodeModules !== null ? readHostVersions(hostNodeModules) : {}
+  const dshRuntimeVersion = resolveDshVersion(hostVersions)
   const exemptions = exemptionsPath !== null ? readExemptions(exemptionsPath) : {}
   const appDir = existingDir(config.appDir) ?? (hostNodeModules !== null ? dirname(hostNodeModules) : null)
 
@@ -141,7 +142,7 @@ export function runAll(config) {
       target: directory,
       kind: 'package',
       findings: [
-        ...checkManifest(directory),
+        ...checkManifest(directory, { dshRuntimeVersion }),
         ...checkPeerContract(directory, { hostVersions, exemptions, exemptionsPath, mountedNames }),
       ],
     })
@@ -229,7 +230,7 @@ const USAGE = `用法: dsh-plugin-conformance-all [选项] [额外的插件包�
 环境变量回退：DSH_HOST_NODE_MODULES、DSH_HOME。
 
 这是 T13 的单一门禁命令，依次运行 T10（清单/exports）、T11（组合装载）、T12（版本/peer）。
-规则依据: dsh-plugin-contract-v1.md §6`
+规则依据: docs/contract-v1.md §6`
 
 const isMain = process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))
 

@@ -23,7 +23,7 @@ const USAGE = `用法: dsh-plugin-composition-check <profileDir> [选项]
   -h, --help     显示本帮助
 
 本轮实现 T11（组合装载静态分析，规则码 DSH-C050…C055）。
-规则依据: dsh-plugin-contract-v1.md §6`
+规则依据: docs/contract-v1.md §6`
 
 const argv = process.argv.slice(2)
 if (argv.includes('-h') || argv.includes('--help')) {

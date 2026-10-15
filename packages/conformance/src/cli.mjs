@@ -21,7 +21,7 @@ const USAGE = `用法: dsh-plugin-conformance <packageDir...> [--json] [--strict
   -h, --help  显示本帮助
 
 本轮实现 T10（清单 + exports，规则码 DSH-C001…C044）。
-规则依据: dsh-plugin-contract-v1.md §6`
+规则依据: docs/contract-v1.md §6`
 
 const argv = process.argv.slice(2)
 

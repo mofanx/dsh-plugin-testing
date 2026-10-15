@@ -23,7 +23,7 @@ const USAGE = `用法: dsh-plugin-version-check <packageDir...> --host <node_mod
   -h, --help           显示本帮助
 
 本轮实现 T12（版本 / peer 契约，规则码 DSH-C060…C065）。
-规则依据: dsh-plugin-contract-v1.md §6`
+规则依据: docs/contract-v1.md §6`
 
 const argv = process.argv.slice(2)
 

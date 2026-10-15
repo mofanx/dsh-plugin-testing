@@ -2,9 +2,9 @@
 
 DSH 插件的**静态一致性检查器**。运行时只依赖 `js-yaml`，且**钉在与宿主相同的 `4.3.1`**（见下方设计取舍）。
 
-> ⚠️ 这**不是** DSH 插件，而是一个独立 CLI 工具 —— 它不注册任何 Cordis 服务，不参与插件组合。见 `dsh-plugin-test-infrastructure-plan.md` 第二节的架构结论。
+> ⚠️ 这**不是** DSH 插件，而是一个独立 CLI 工具 —— 它不注册任何 Cordis 服务，不参与插件组合。
 
-规则依据：`dsh-plugin-contract-v1.md` 第六节。每个检查项都有稳定错误码 `DSH-C0xx`，CI 报告与豁免说明均引用它。
+规则依据：`docs/contract-v1.md` 第六节。每个检查项都有稳定错误码 `DSH-C0xx`，CI 报告与豁免说明均引用它。
 
 ## 用法
 
@@ -74,8 +74,8 @@ npm test        # node --test "tests/**/*.spec.mjs"
 
 ## 设计取舍
 
-- **只依赖 `js-yaml`**，并**钉死 4.3.1**（宿主同版本）。这不是随便选的：`!!js` 自定义标签的构造 API 在 js-yaml 5 里被 `defineScalarTag` 取代，用错大版本会让 patch 解析方言与 DSH boot 不一致 —— 而组合分析的全部结论都建立在这个方言上。
-- **自实现 SemVer**：满足性逻辑覆盖 npm 的常用子集（比较器、`^`、`~`、X-range、`||`，以及预发布准入规则）。落入仓库后建议改用官方 `semver` 包，`tests/version.spec.mjs` 即是迁移的安全网。
+- **只依赖 `js-yaml` 与 `semver`**，并**钉死 js-yaml 4.3.1**（宿主同版本）。这不是随便选的：`!!js` 自定义标签的构造 API 在 js-yaml 5 里被 `defineScalarTag` 取代，用错大版本会让 patch 解析方言与 DSH boot 不一致 —— 而组合分析的全部结论都建立在这个方言上。
+- **SemVer 用官方 `semver@^7.8.5`（与 `dsh-app-boot` 同版本）**，且满足性判定显式对齐运行时的 `includePrerelease: true`。早期版本曾自实现 npm 子集（默认预发布准入规则），会在预发布宿主（`0.2.1-alpha.x`）上**误报**——运行时放行、检查器拒绝。`tests/version.spec.mjs` 里的预发布回归用例即为此钉住。
 - **组合算法是移植而非依赖**：`dshmarket/lib/check.js` 不在 `dshmarket` 的 `exports` 中，无法 `import`，因此 `composition.mjs` 复刻其 `composeLayers` 行为，并用测试锁定。
 - **不做的事**：不 boot DSH、不联网、不写盘。这是最便宜的一道门禁，也是团队最先撞上的那类错误。
 - **层栈必须完整**：`bundle 层 → <app>/cordis.patch.yml → profile patch → $DSH_HOME patch`。少一层就会把合法的 profile patch 误判成孤儿 —— 这个坑已踩过并有回归测试。

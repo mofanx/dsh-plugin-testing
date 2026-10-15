@@ -20,6 +20,14 @@
 | `0.2.1-alpha.2` | 源码检出 HEAD（`release-0.2.1-alpha.2`） | ❌ **已移除**（`sdk-minimal` patch 0 处） |
 | 团队插件 peer 声明 | `>=0.2.1-alpha.2` | → **落在已移除的那条线上** |
 
+**版本口径（必须一致，本条是其余一切判断的基准）**：
+
+1. **唯一版本来源**：宿主版本号一律以 `@deepseek-ai/dsh-app-boot` 包**自己目录下** `package.json` 的 `version` 字段为准。运行时 `getDshRuntimeVersion()` 实现为 `fileURLToPath(new URL("../package.json", import.meta.url))`，检查器 `resolveDshVersion()` 优先读同一字段——**已实测桌面端 `0.2.0-rc.2` 与主仓 `0.2.1-alpha.2` 两处实现字节级同源**。
+2. **该值是分端分部署的**：web 端与桌面端各自加载**自己的** `dsh-app-boot` 包，版本可能不同——桌面端（`resources/app` 打包）= `0.2.0-rc.2`；主仓源码（`packages/boot/app-boot`）= `0.2.1-alpha.2`；web GUI 由 `dsh web` 启动，宿主版本取决于它加载哪一份 `dsh-app-boot`（当前 web GUI 实现 checkout 在 `resources/app`，与桌面端同源为 `0.2.0-rc.2`；改从主仓跑 `dsh web` 则为 `0.2.1-alpha.2`）。
+3. **明确排除**（不以下列为版本来源）：git 分支/tag 名（`release-0.2.1-alpha.2` 是源码线名，非版本号）、各宿主子包各自安装的 npm 版本（可能不同步）、插件 `engines.dsh` 范围。
+4. **对判定的含义**：`removedIn` 阈值判定 `semver.lt(宿主版本, removedIn)` 要求两侧同一坐标系；检查器 `runtimeVersion` 来自它配置的 `hostNodeModules` 指向的那一端，所以**判定哪一端，`hostNodeModules` 就指向那一端**（多端多版本 = 多份 `hostNodeModules` 分别跑）。
+5. **移除事实的确认来源**：以主仓 `docs/upgrade-guide/...` 升级指南与对应 release 源码检出为准；测试负责人据此填写 `removedIn`，并同步该端宿主基线归档供交叉验证。
+
 官方升级指南原文：
 
 > 下一版本不再发布 `@deepseek-ai/dsh-invariants`、`InvariantRegistry`、`InvariantInstaller`、`InvariantFailure`、`InvariantError`，也不再发布任何 `<package>/invariant` 子路径。
@@ -155,13 +163,13 @@
 | `dsh-base` | `"@deepseek-ai/cordis": "~4.0.4"` |
 | `dsh-web-app` | `"@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2"`（精确钉住） |
 | `dsh-headless` | `"@deepseek-ai/dsh-agent": "0.2.0-rc.2"`（精确钉住） |
-| **反例（某插件）** | `">=0.2.1-alpha.2 <0.3.0"` ← **宽松范围，已导致不兼容** |
+| **反例（某插件）** | `">=0.2.1-alpha.2 <0.3.0"` ← **下界过新，遗漏 0.2.0-rc.x 线，触发 C060 belowMin** |
 
 **契约要求**：
 
 1. 优先**精确钉住**目标宿主版本（如 `0.2.0-rc.2`）。
 2. Cordis 系可用 `~`（如 `~4.0.4`）。
-3. **禁止**跨主版本的大范围（如 `>=0.2.1-alpha.2 <0.3.0`）—— 它把预发布与正式版混在一段，无法表达真实兼容性。
+3. **禁止**跨主版本的大范围（如 `>=1.0.0 <3.0.0`）—— 它隐含支持中间一整个 major 却未验证。注意 `>=0.2.1-alpha.2 <0.3.0` **不是**跨主版本（major 恒为 0），它的问题是**下界过新、遗漏 0.2.0-rc.x 线**，由 `C060`（belowMin）捕获。运行时用 `includePrerelease: true`，单个范围 `>=0.2.0-rc.2 <0.3.0` 即可同时覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线。
 4. `engines.dsh` 与 `peerDependencies` 中的 DSH 版本**必须一致**。
 
 ---
@@ -247,7 +255,12 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 | `DSH-C041` | `exports` 缺 `./package.json` | error |
 | `DSH-C042` | 声明了 `dsh.bundle` 但 `exports` 缺 `./cordis.patch.yml` | error |
 | `DSH-C043` | 有客户端半边但 `exports` 缺 `./client` | error |
-| `DSH-C044` | `exports` 含 `./invariant` | **error**（API 已移除） |
+| `DSH-C044` | `exports` 含**已移除的子路径**（清单见 `packages/conformance/removed-apis.json`，数据驱动） | **按宿主版本分级**：未指定宿主 → error；宿主早于 `removedIn` → warn；宿主达/过 `removedIn` → error |
+
+> **移除 API 数据表（`removed-apis.json`）**：宿主随版本演进会移除 API（0.2.1 线已移除 `./invariant`）。这些移除**不再硬编码进规则**，而是写入一张声明式数据表，每条记录 `{ kind, match, pattern, removedIn, rule, note }`。检查器读表匹配、按 `removedIn` 与宿主版本阈值分级。
+> - **新增同类移除**（新的 `subpath` 被移除）＝在表里追加一条数据，**零代码改动**；
+> - **数据表正确性**由测试用 `api-baseline.json` 交叉验证兜底（"声明在 X 移除，但 X 之前的快照已缺失"或"X 之后的快照仍存在"都会让测试变红）；
+> - 当前仅实现 `subpath` 这一种 `kind`；未来 `symbol`/`package`/`service` 移除需先实现对应检查器再启用对应 `kind`。
 
 ### 组合装载
 
@@ -271,6 +284,7 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 
 | 错误码 | 规则 | 级别 |
 |---|---|---|
+| `DSH-C057` | cordis 系 peer 范围不满足宿主实际版本（运行时预检不检查 cordis，但会引发 hoist 遮蔽风险） | warn |
 | `DSH-C060` | peer 范围不满足宿主实际版本（`belowMin`） | error |
 | `DSH-C061` | peer 范围不满足宿主实际版本（`aboveMax`，仅显式上界/精确钉住时） | warn |
 | `DSH-C062` | peer 使用了禁止的跨主版本大范围 | error |
@@ -292,7 +306,9 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 - [ ] 第六节错误码命名与分级是否采纳
 - [ ] 3.2 中"禁止跨主版本大范围"是否对内部实验插件放宽
 - [ ] 豁免新增的审批流程由谁负责
-- [ ] 是否需要为 `0.2.0-rc.2` 与 `0.2.1-alpha.x` 双线维护契约（当前假设：单线，目标 `0.2.1`）
+- [x] 双线维护：**已通过 `removed-apis.json` 数据表 + 阈值分级落地**——单线声明（`removedIn`）+ 阈值自适应双线（宿主早于 → warn，达/过 → error），不维护两套契约
+- [x] `DSH-C044` 参数化：**已落地为数据驱动**（`removed-apis.json`），不再按目标线无条件 error
+- [ ] 已确认事实：运行时 peer 预检用**统一 runtime 版本**（`getDshRuntimeVersion()` 读 `dsh-app-boot` 自身版本）去满足所有 `dsh`/`dsh-*` peer，**不**用各 peer 包各自安装版本；cordis 系 peer 不被预检。checker 已按此对齐（`resolveDshVersion` 优先 `dsh-app-boot`，cordis 独立为 `C057`）
 
 ---
 
@@ -300,4 +316,5 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 
 | 日期 | 版本 | 变更 | 作者 |
 |---|---|---|---|
+| 2026-10-15 | v1.1-draft | **移除 API 数据表落地**：`DSH-C044` 从硬编码改为 `removed-apis.json` 数据驱动并按宿主版本阈值分级（早于 `removedIn` → warn，达/过 → error）；新增数据表与 `api-baseline.json` 的交叉验证兜底。未来新增 `subpath` 移除只需加一条数据 | 测试负责人 |
 | 2026-10-14 | v1.0-draft | 初稿。**相对最初提案的关键修正**：① `dsh.client.inject` 改为可选且为信息性字段（原误列为必填的 Cordis 注入）；② 删除"每包必须有 `./invariant`"（该 API 在 0.2.1 线已移除）；③ 新增第六节错误码表供静态检查器实现 | 测试负责人 |

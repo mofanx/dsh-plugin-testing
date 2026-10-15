@@ -1,0 +1,15 @@
+{
+  "$comment": "DSH 宿主 API 移除清单（版本化数据表）。未来某 API 被移除时，只在此追加一条记录，门禁（DSH-C044 等）自动适配，无需改代码。字段：id 稳定标识；kind 移除类型（当前仅 subpath，未来可扩展 symbol/package/service）；match 匹配方式 exact|suffix|prefix|regex；pattern 匹配模式；removedIn 首个移除该 API 的宿主版本（semver）。removedIn 版本口径：一律以 @deepseek-ai/dsh-app-boot 的 package.json version 字段为准（见 contract-v1 §〇）——web/桌面两端机制同源但取值分端：桌面打包版 0.2.0-rc.2、主仓源码 0.2.1-alpha.2；rule 对应门禁错误码；note 迁移指引。",
+  "schemaVersion": 1,
+  "removed": [
+    {
+      "id": "invariant-subpath",
+      "kind": "subpath",
+      "match": "suffix",
+      "pattern": "/invariant",
+      "removedIn": "0.2.1-alpha.2",
+      "rule": "DSH-C044",
+      "note": "0.2.1 线移除 invariant 子路径导出（含 ./invariant 与任意 /invariant 后缀）；插件 exports 不应再暴露它，改自建结构化诊断。精确移除版本待主仓确认，当前以已知移除点 0.2.1-alpha.2 记。"
+    }
+  ]
+}

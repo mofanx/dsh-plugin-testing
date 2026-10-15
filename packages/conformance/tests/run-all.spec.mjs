@@ -44,7 +44,8 @@ test('expandPattern：尾部 /* 展开为含 package.json 的子目录', () => {
 
 test('loadConfig：缺失或非法配置回退为空对象', () => {
   assert.deepEqual(loadConfig(join(toolRoot, 'no-such-config.json')), {})
-  const bad = join(tempDirs[0] ?? toolRoot, 'bad.json')
+  // 用临时目录而非 toolRoot：避免把 bad.json 泄漏进源码目录（exit 时统一清理）。
+  const bad = join(makePackage({ name: 'x', version: '1.0.0' }), 'bad.json')
   writeFileSync(bad, '{ not json')
   assert.deepEqual(loadConfig(bad), {})
 })

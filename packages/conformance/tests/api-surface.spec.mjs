@@ -13,7 +13,8 @@ import { after, test } from 'node:test'
 
 import { collectApiSurface, diffApiSurface, listHostPackages, readPackageSurface } from '../src/api-surface.mjs'
 
-const REAL_HOST = 'D:\\Program Files\\DSH NEXT\\resources\\app\\node_modules'
+/** The real packaged host tree; override with `DSH_HOST_NODE_MODULES` on another machine. */
+const REAL_HOST = process.env.DSH_HOST_NODE_MODULES ?? 'D:\\Program Files\\DSH NEXT\\resources\\app\\node_modules'
 
 /** Build a throwaway `@deepseek-ai` scope with two packages. */
 function makeFixtureTree() {

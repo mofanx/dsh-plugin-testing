@@ -7,7 +7,7 @@
  * are not importable (`check.js` is not in `dshmarket`'s `exports`), so the
  * behaviour is reproduced here and pinned by tests.
  *
- * Implements rules DSH-C050…C055 from `dsh-plugin-contract-v1.md` §6.
+ * Implements rules DSH-C050…C055 from `docs/contract-v1.md` §6.
  *
  * @module dsh-plugin-conformance/composition
  */

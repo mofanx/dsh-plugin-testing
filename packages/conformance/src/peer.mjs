@@ -5,7 +5,17 @@
  * the pass that catches the classic `belowMin` situation: peers demanding a
  * source-line prerelease while the running host ships an older rc line.
  *
- * Implements rules DSH-C060…C065 from `dsh-plugin-contract-v1.md` §6.
+ * Implements rules DSH-C057 and DSH-C060…C065 from `docs/contract-v1.md` §6.
+ *
+ * Faithfulness note: the runtime (`dsh-app-boot` `evaluatePluginCompatibility`)
+ * only preflights peers named `@deepseek-ai/dsh` or `@deepseek-ai/dsh-*`, and
+ * it compares each against the **single** runtime version read from
+ * `dsh-app-boot`'s own manifest (`getDshRuntimeVersion`), not against each
+ * peer's individually installed version. Cordis peers are *not* preflighted at
+ * all — they resolve through ordinary npm resolution. This module mirrors that
+ * split: dsh runtime peers are graded against one runtime version, and cordis
+ * peers are graded against their own installed version as a separate,
+ * non-blocking warning (DSH-C057).
  *
  * @module dsh-plugin-conformance/peer
  */
@@ -15,28 +25,56 @@ import { join } from 'node:path'
 import { severityOf } from './rules.mjs'
 import { diagnoseRange } from './semver.mjs'
 
-/** Package-name prefixes that belong to the host, not to the plugin. */
-const HOST_PREFIXES = ['@deepseek-ai/dsh-', '@deepseek-ai/cordis']
+/** The runtime preflight's exact dsh peer name and its scoped prefix. */
+const DSH_RUNTIME_PEER_NAME = '@deepseek-ai/dsh'
+const DSH_RUNTIME_PEER_PREFIX = '@deepseek-ai/dsh-'
+
+/** Cordis and its plugin family: npm-resolved, not runtime-preflighted. */
+const CORDIS_PEER_NAME = '@deepseek-ai/cordis'
+const CORDIS_PEER_PREFIX = '@deepseek-ai/cordis-plugin-'
 
 /**
- * Packages whose version identifies the DSH **runtime** line. Exemption
+ * Packages whose version identifies the DSH **runtime** line. `dsh-app-boot`
+ * is the authoritative source (`getDshRuntimeVersion()` reads its own
+ * `package.json`); the rest are fallbacks for partial host trees. Exemption
  * entries in `compatibility.json` are keyed on this version, not on each
  * peer's installed version.
  */
 const DSH_VERSION_SOURCES = [
+  '@deepseek-ai/dsh-app-boot',
   '@deepseek-ai/dsh-base',
   '@deepseek-ai/dsh-agent',
   '@deepseek-ai/dsh-session',
   '@deepseek-ai/dsh-llm',
 ]
 
-/** @param {string} name */
+/**
+ * Whether `name` belongs to the host's own package surface (dsh runtime or
+ * cordis family). This is the *broad* membership used for composition rules;
+ * the peer pass distinguishes the two families internally.
+ * @param {string} name
+ */
 export function isHostCorePackage(name) {
-  return HOST_PREFIXES.some((prefix) => name.startsWith(prefix))
+  return (
+    name === DSH_RUNTIME_PEER_NAME ||
+    name.startsWith(DSH_RUNTIME_PEER_PREFIX) ||
+    name === CORDIS_PEER_NAME ||
+    name.startsWith(CORDIS_PEER_PREFIX)
+  )
+}
+
+/** Runtime-preflighted peers only (`@deepseek-ai/dsh` / `@deepseek-ai/dsh-*`). */
+function isDshRuntimePeer(name) {
+  return name === DSH_RUNTIME_PEER_NAME || name.startsWith(DSH_RUNTIME_PEER_PREFIX)
+}
+
+/** Npm-resolved cordis peers (`@deepseek-ai/cordis` / `@deepseek-ai/cordis-plugin-*`). */
+function isCordisPeer(name) {
+  return name === CORDIS_PEER_NAME || name.startsWith(CORDIS_PEER_PREFIX)
 }
 
 /**
- * Best-effort DSH runtime version for a host tree.
+ * Best-effort DSH runtime version for a host tree, preferring `dsh-app-boot`.
  * @param {Record<string, string>} hostVersions
  * @returns {string | undefined}
  */
@@ -100,14 +138,21 @@ export function readExemptions(filePath) {
 }
 
 /**
- * Does this range carry both a lower and an upper bound in different majors?
+ * Whether a single `||` clause spans two or more major versions. Only an
+ * *implicit* cross-major span within one clause is forbidden (e.g.
+ * `>=1.0.0 <3.0.0` silently claims 2.x); an explicit union of per-major
+ * clauses (`>=1.0.0 <2.0.0 || >=2.0.0 <3.0.0`) is an honest per-line
+ * declaration and is not flagged.
  * @param {unknown} range
  */
 function crossesMajor(range) {
   if (typeof range !== 'string') return false
-  if (!/(<|<=)\s*\d/.test(range) || !/(>|>=)\s*\d/.test(range)) return false
-  const versions = [...range.matchAll(/\d+\.\d+\.\d+/g)].map((match) => match[0])
-  return new Set(versions.map((version) => version.split('.')[0])).size > 1
+  for (const clause of range.split('||')) {
+    const majors = [...clause.matchAll(/(?:>=|>|<=|<)\s*(\d+)\.\d+\.\d+/g)].map((match) => Number(match[1]))
+    if (majors.length < 2) continue
+    if (Math.max(...majors) - Math.min(...majors) >= 2) return true
+  }
+  return false
 }
 
 /**
@@ -134,7 +179,7 @@ export function checkPeerContract(packageDir, options = {}) {
   const name = typeof pkg.name === 'string' ? pkg.name : '<unnamed>'
   const version = typeof pkg.version === 'string' ? pkg.version : undefined
   const peers = pkg.peerDependencies !== null && typeof pkg.peerDependencies === 'object' ? pkg.peerDependencies : {}
-  const dshVersion = options.dshVersion ?? resolveDshVersion(hostVersions)
+  const runtimeVersion = options.dshVersion ?? resolveDshVersion(hostVersions)
 
   // T15 — a package that is never mounted as a loader row has its peers
   // evaluated by nobody: the runtime's version preflight only inspects rows it
@@ -144,76 +189,96 @@ export function checkPeerContract(packageDir, options = {}) {
   const mounted =
     options.mountedNames === undefined || options.mountedNames === null ? undefined : options.mountedNames.has(name)
 
-  // C060 / C061 — satisfaction against the concrete host.
+  // --- C060 / C061 — dsh runtime peers vs the single runtime version -----
+  // The runtime compares every dsh peer against `getDshRuntimeVersion()`, not
+  // against each peer's own installed version, so we do the same here.
   /** @type {string[]} */
   const unsatisfied = []
   for (const [dependency, range] of Object.entries(peers)) {
-    if (!isHostCorePackage(dependency)) continue
-    const hostVersion = hostVersions[dependency]
-    if (hostVersion === undefined) continue
-    const diagnosis = diagnoseRange(hostVersion, range)
+    if (!isDshRuntimePeer(dependency)) continue
+    if (runtimeVersion === undefined) continue
+    const diagnosis = diagnoseRange(runtimeVersion, range)
     if (diagnosis.satisfied) continue
     unsatisfied.push(dependency)
     if (mounted === false) continue // collapsed into one C066 below
     findings.push(
       finding(
         diagnosis.direction === 'aboveMax' ? 'DSH-C061' : 'DSH-C060',
-        `${name} 要求 ${dependency} ${range}，宿主实际为 ${hostVersion}（${diagnosis.direction ?? '不匹配'}）`,
+        `${name} 要求 ${dependency} ${range}，宿主运行时为 ${runtimeVersion}（${diagnosis.direction ?? '不匹配'}）`,
       ),
     )
   }
 
-  // C066 — support packages never get mounted, so nothing evaluates their
-  // peers. The mismatch is real but latent; it becomes blocking the moment the
-  // package is inserted as a row.
-  if (mounted === false) {
-    if (unsatisfied.length > 0) {
-      findings.push(
-        finding(
-          'DSH-C066',
-          `${name} 是支撑包（未被任何 profile 挂载为行），peer 不满足宿主：${unsatisfied.join(', ')} —— 当前不阻断加载，但一旦被挂载为行即会被宿主禁用`,
-        ),
-      )
-    }
-    return findings
+  // --- C057 — cordis peers vs their own installed version ----------------
+  // Cordis peers are resolved by npm, not by the runtime preflight. A mismatch
+  // here means the plugin would pull a second cordis family version (hoist
+  // shadowing), but the host does not refuse the plugin for it — hence warn.
+  for (const [dependency, range] of Object.entries(peers)) {
+    if (!isCordisPeer(dependency)) continue
+    const hostVersion = hostVersions[dependency]
+    if (hostVersion === undefined) continue
+    const diagnosis = diagnoseRange(hostVersion, range)
+    if (diagnosis.satisfied) continue
+    findings.push(
+      finding(
+        'DSH-C057',
+        `${name} 的 cordis 系 peer ${dependency} ${range} 不满足宿主实际版本 ${hostVersion}（运行时预检不检查 cordis，但会引发 hoist 遮蔽风险）`,
+      ),
+    )
   }
 
-  // C064 — an unsatisfied peer needs an exemption for the DSH **runtime**
-  // version. `compatibility.json` authorizes a plugin against runtime
-  // versions (`pkg@ver` → `["0.2.0-rc.2"]`), not against each peer's own
-  // installed version, so the lookup must not compare per-peer versions.
-  if (unsatisfied.length > 0) {
+  // --- C066 — support packages never get mounted, so nothing evaluates their
+  // dsh peers. The mismatch is real but latent; it becomes blocking the moment
+  // the package is inserted as a row.
+  if (mounted === false && unsatisfied.length > 0) {
+    findings.push(
+      finding(
+        'DSH-C066',
+        `${name} 是支撑包（未被任何 profile 挂载为行），peer 不满足宿主：${unsatisfied.join(', ')} —— 当前不阻断加载，但一旦被挂载为行即会被宿主禁用`,
+      ),
+    )
+  }
+
+  // --- C064 — an unsatisfied dsh peer needs an exemption for the DSH runtime
+  // version. `compatibility.json` authorizes a plugin against runtime versions
+  // (`pkg@ver` → `["0.2.0-rc.2"]`), not against each peer's own installed
+  // version, so the lookup must not compare per-peer versions.
+  if (mounted !== false && unsatisfied.length > 0) {
     const key = `${name}@${version ?? ''}`
     const allowed = exemptions[key]
-    const covered = Array.isArray(allowed) && dshVersion !== undefined && allowed.includes(dshVersion)
+    const covered = Array.isArray(allowed) && runtimeVersion !== undefined && allowed.includes(runtimeVersion)
     if (!covered) {
-      const where = dshVersion === undefined ? '未知 DSH 运行时版本' : `宿主 DSH ${dshVersion}`
+      const where = runtimeVersion === undefined ? '未知 DSH 运行时版本' : `宿主 DSH ${runtimeVersion}`
       findings.push(
         finding('DSH-C064', `${key} 在 ${where} 上不满足 ${unsatisfied.join(', ')}，且无对应豁免（compatibility.json）`),
       )
     }
   }
 
-  // C062 — peer ranges that span major versions.
+  // --- C062 — peer ranges that span major versions (manifest-shape defect,
+  // independent of whether the package is mounted).
   for (const [dependency, range] of Object.entries(peers)) {
-    if (!isHostCorePackage(dependency)) continue
+    if (!isDshRuntimePeer(dependency)) continue
     if (crossesMajor(range)) {
       findings.push(finding('DSH-C062', `${dependency} 的 peer 范围跨主版本：${range}`))
     }
   }
 
-  // C063 — engines.dsh must agree with the DSH peer ranges.
+  // --- C063 — engines.dsh must agree with the DSH peer ranges (also a
+  // manifest-shape defect, independent of mount status).
   const dshEngine = pkg.engines !== null && typeof pkg.engines === 'object' ? pkg.engines.dsh : undefined
   if (dshEngine !== undefined) {
     for (const [dependency, range] of Object.entries(peers)) {
-      if (!dependency.startsWith('@deepseek-ai/dsh-')) continue
+      if (!isDshRuntimePeer(dependency)) continue
       if (range !== dshEngine) {
         findings.push(finding('DSH-C063', `${dependency} 的 peer 范围 ${range} 与 engines.dsh ${dshEngine} 不一致`))
       }
     }
   }
 
-  // C065 — exemption entries that no longer match the current package version.
+  // --- C065 — exemption entries that no longer match the current package
+  // version (independent of mount status: a support package's stale exemption
+  // is still stale).
   if (version !== undefined) {
     for (const key of Object.keys(exemptions)) {
       if (!key.startsWith(`${name}@`)) continue
