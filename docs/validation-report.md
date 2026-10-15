@@ -129,6 +129,32 @@ A/B 实验（人造探针插件，peer 要求 `@deepseek-ai/dsh-llm >=9.0.0`，�
 
 若采纳改动，需同步修改契约（`DSH-C060` 那一行 + §7）并补回归用例。
 
+### 运行时侧的确证（读 `dsh-app-boot` 源码）
+
+`resources/app/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js` 的 `preflight()`：
+
+```js
+const issue = evaluatePluginCompatibility(manifest, exemptions);
+return issue === void 0 || issue.exempted ? void 0 : pluginCompatibilityWarning(issue);
+// 返回非 undefined → conflict → deny(row, conflict) → row.disabled = true
+```
+
+即：
+
+- **没有生效的豁免** → 运行时把该行 `row.disabled = true`，**插件在启动时被静默禁用**；
+- **有生效的豁免**（`issue.exempted`）→ 返回 `void 0`，**不判冲突，插件正常加载**。
+
+由此得到一个清晰的结论：
+
+1. **未豁免时 `C060` 判 error 完全正确** —— 运行时确实会禁用该行；
+2. **已豁免时 `C060` 判 error 与运行时不一致** —— 运行时会放行，插件的实际后果是"能加载"，不是"被禁用"。
+
+### 对你这套 EDA 插件的直接后果（重要）
+
+你三条豁免的 key 写成 `@0.1.0`，而插件实际版本是 `0.1.0-alpha.1` → `issue.exempted` 为 **false** → **运行时正在启动时静默禁用这几个插件行**（stderr 会打印 `disabling profile plugin ...`）。
+
+**所以这不只是"门禁报告不好看"，而是你本机上这些插件实际跑不起来的原因。** 把 key 改成 `@0.1.0-alpha.1` 即可让运行时按其原意放行。
+
 ## 八、一句话总结
 
 这个项目在真实插件仓库上**找出了 14 条此前不可见的问题、没有一条误报**，其中一条（豁免失效）是需要立刻处理的；而它做到这一点**不需要 EDA 客户端、不需要模型、不需要构建、几秒完成**。
