@@ -558,12 +558,18 @@ export function collectMountedPackageNames(profileDir, options = {}) {
  * Check one DSH profile directory's composition.
  *
  * @param {string} profileDir
- * @param {{ hostNodeModules?: string | null, homeDir?: string | null, appDir?: string | null }} [options]
+ * @param {{ hostNodeModules?: string | null, homeDir?: string | null, appDir?: string | null, focus?: ((name: string) => boolean) | null, stats?: { filteredByFocus: number } }} [options]
  * @returns {import('./manifest.mjs').Finding[]}
  */
 export function checkComposition(profileDir, options = {}) {
   const hostNodeModules = options.hostNodeModules ?? null
   const coreNames = collectCorePackageNames(hostNodeModules)
+  // `focus` narrows *attribution* only: profile-level dependency findings are a
+  // statement about the whole profile, so a plugin author who points the gate at
+  // their own profile otherwise gets errors for packages they cannot fix (the
+  // host's own components, other people's plugins).
+  const focus = options.focus ?? null
+  const stats = options.stats
   /** @type {import('./manifest.mjs').Finding[]} */
   const findings = []
 
@@ -578,6 +584,13 @@ export function checkComposition(profileDir, options = {}) {
   // --- C050 / C056: host packages pulled in as ordinary dependencies ------
   /** @param {string} owner @param {string} name */
   const reportOrdinaryDependency = (owner, name) => {
+    // The profile's own dependency list is always in scope — that one is the
+    // author's to fix. An installed package outside the focus set is counted and
+    // skipped, never silently dropped: the run summary reports the count.
+    if (owner !== 'profile' && focus !== null && !focus(owner)) {
+      if (stats !== undefined) stats.filteredByFocus += 1
+      return
+    }
     if (RUNTIME_CORE_SET.has(name)) {
       findings.push(
         finding('DSH-C050', `${owner} 把宿主核心包 ${name} 放进了 dependencies（会 hoist 到 profile 根并遮蔽宿主版本）`),

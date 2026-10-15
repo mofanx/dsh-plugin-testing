@@ -42,7 +42,8 @@ npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
   "hostNodeModules": ".../DSH NEXT/resources/app/node_modules",
   "dshHome": ".../.dsh",
   "packages": ["D:/projects/my-plugins/packages/*"],
-  "profiles": [".../.dsh/profiles/desktop"]
+  "profiles": [".../.dsh/profiles/desktop"],
+  "focusPackages": ["@your-scope/dsh-plugin-*"]
 }
 ```
 
@@ -63,6 +64,20 @@ npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
 - 当 `packages` + `profiles` 展开后目标数为 **0** 时，CLI 直接以 **exit 2** 退出并逐个打印未匹配的模式（部分落空 → exit 1 且列出缺口；全部落空 → exit 2）。
 
 **判级取决于"是否被挂载"**：宿主的版本预检只求值它将要 import 的**行**。所以不满足的 peer 在**被挂载为 profile 行的包**上是 `DSH-C060`/`C064`（error，宿主会真的禁用它），在**支撑包**（从不作为行挂载）上只是 `DSH-C066`（warn）。给出的 `profile` 决定了这个判定；不给 profile 时按保守口径全部视为被挂载。
+
+**命中豁免时 `DSH-C060` 降级为 warn**：`dsh-app-boot` 的 `preflight()` 在 `issue.exempted` 为真时返回"无冲突"，该行**不会被禁用** —— 此时"阻断"的含义不成立，所以 `C060` 降级为提醒（消息里写明命中的豁免 key 与宿主版本），`C064` 同时消失。三要素（包名 / 版本 / 宿主版本）任一不匹配就不算命中，`C060` 保持 error。
+
+### 只报告自己的包（`focusPackages`，可选）
+
+组合检查是 **profile 级**的：它读整个 profile，因此会连带报出宿主自带组件与第三方插件的问题（实测中 `dsh-lsp-stdio`、`dsh-tool-lsp`、`dsh-agent-plugins-market`，其中 `C050` 是 error 级）。插件作者跑自己的仓库时，这些包他改不了。
+
+`focusPackages`（包名，支持 `*`）把**报告范围**收敛到自己的包：
+
+```json
+{ "focusPackages": ["@your-scope/dsh-plugin-*"] }
+```
+
+边界：只影响 `C050`/`C056` 的**归属过滤**，不改变检查本身；profile 自身的 `dependencies` **永远在范围内**（那是作者要修的）；被过滤的条目会**计数并打印**（`已按关注范围过滤：N 条…`），不静默丢弃。
 
 ### 组合装载静态分析（规则 `DSH-C050…C056`）
 

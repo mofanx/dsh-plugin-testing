@@ -124,6 +124,38 @@ test('有匹配豁免时不报 DSH-C064', () => {
   assert.ok(!codes.includes('DSH-C064'), '豁免命中时不应报 DSH-C064')
 })
 
+test('有匹配豁免时 DSH-C060 降级为 warn', () => {
+  // dsh-app-boot 的 preflight() 在 issue.exempted 为真时返回"无冲突"，该行因此
+  // 不被禁用 —— 此时 C060 的阻断含义不成立，必须降级；但事实仍要看得见。
+  const dir = makePackage(SAMPLE)
+  const exemptions = { '@sample/dsh-plugin-sample@0.1.0': ['0.2.0-rc.2'] }
+  const finding = checkPeerContract(dir, { hostVersions: HOST, exemptions }).find(
+    (item) => item.code === 'DSH-C060',
+  )
+  assert.ok(finding, '仍应报出 C060（保留事实，不能整条消失）')
+  assert.equal(finding.severity, 'warn', '有覆盖豁免的 C060 必须降级为 warn')
+  assert.match(finding.message, /豁免/, '降级原因必须写进消息，不能只改级别')
+})
+
+test('豁免未覆盖时 DSH-C060 保持 error', () => {
+  // key 或宿主版本任一不匹配 = 运行时不放行该行 → 必须继续阻断。
+  const dir = makePackage(SAMPLE)
+  for (const exemptions of [
+    {},
+    { '@sample/dsh-plugin-sample@9.9.9': ['0.2.0-rc.2'] },
+    { '@sample/dsh-plugin-sample@0.1.0': ['9.9.9'] },
+  ]) {
+    const finding = checkPeerContract(dir, { hostVersions: HOST, exemptions }).find(
+      (item) => item.code === 'DSH-C060',
+    )
+    assert.equal(
+      finding?.severity,
+      'error',
+      `豁免未覆盖 ${JSON.stringify(exemptions)} 时 C060 必须保持 error`,
+    )
+  }
+})
+
 test('cordis 系 peer 不满足宿主 → DSH-C057（warn，且不报 C060/C064）', () => {
   // 运行时预检只检查 @deepseek-ai/dsh 与 dsh-* peer；cordis 走 npm 解析。
   // 所以 cordis 不满足应报独立的 warn（C057），而非阻断性的 C060/C064。

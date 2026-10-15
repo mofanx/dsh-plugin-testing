@@ -150,6 +150,25 @@ function resolveExemptionsPath(config, profileDirs) {
 }
 
 /**
+ * Build a package-name matcher from `focusPackages`.
+ *
+ * `*` matches any run of characters, which is the shape a scope-wide pattern
+ * takes (`@deepseek-ai/dsh-plugin-eda-*`). An absent or junk value coerces to
+ * "no focus", matching how `packages` / `profiles` treat junk input.
+ *
+ * @param {string[]} patterns
+ * @returns {((name: string) => boolean) | null}
+ */
+function resolveFocus(patterns) {
+  if (patterns.length === 0) return null
+  const regexes = patterns.map((pattern) => {
+    const escaped = pattern.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    return new RegExp(`^${escaped.join('.*')}$`)
+  })
+  return (name) => regexes.some((regex) => regex.test(name))
+}
+
+/**
  * Run every static pass over the declared targets.
  *
  * @param {ConformanceConfig} config
@@ -162,6 +181,8 @@ function resolveExemptionsPath(config, profileDirs) {
  *   unmatchedPatterns: string[],
  *   targetCount: number,
  *   mountedPackageCount: number | null,
+ *   focusPatterns: string[],
+ *   filteredByFocus: number,
  *   results: { target: string, kind: 'package' | 'profile' | 'config', findings: import('./manifest.mjs').Finding[] }[],
  * }}
  */
@@ -215,6 +236,15 @@ export function runAll(config) {
   const exemptionEntries = exemptionsPath !== null ? readExemptions(exemptionsPath) : {}
   const appDir = app.path ?? (hostNodeModules !== null ? dirname(hostNodeModules) : null)
 
+  // `focusPackages` narrows profile-level *reporting* to the author's own
+  // packages. Filtered findings are counted so the run can state how many it
+  // withheld: a gate that quietly checks less is worse than no gate, and the
+  // same holds for a gate that quietly reports less.
+  const focusPatterns = asStringList(config.focusPackages)
+  const focus = resolveFocus(focusPatterns)
+  /** @type {{ filteredByFocus: number }} */
+  const focusStats = { filteredByFocus: 0 }
+
   // T15 — grade peers by whether the package is actually mounted as a loader
   // row. The union across every declared profile is used: being mounted in any
   // one of them is what makes an out-of-range peer blocking. `null` means "no
@@ -261,7 +291,13 @@ export function runAll(config) {
     results.push({
       target: directory,
       kind: 'profile',
-      findings: checkComposition(directory, { hostNodeModules, homeDir: dshHome, appDir }),
+      findings: checkComposition(directory, {
+        hostNodeModules,
+        homeDir: dshHome,
+        appDir,
+        focus,
+        stats: focusStats,
+      }),
     })
   }
 
@@ -282,6 +318,8 @@ export function runAll(config) {
     unmatchedPatterns: [...packageTargets.unmatched, ...profileTargets.unmatched],
     targetCount: packageDirs.length + profileDirs.length,
     mountedPackageCount: mountedNames === null ? null : mountedNames.size,
+    focusPatterns,
+    filteredByFocus: focusStats.filteredByFocus,
     results,
   }
 }
@@ -295,9 +333,14 @@ export function summarize(results) {
   const byCode = new Map()
   for (const result of results) {
     for (const finding of result.findings) {
-      const entry = byCode.get(finding.code) ?? { code: finding.code, severity: finding.severity, count: 0 }
+      // Keyed by code *and* severity: the same code can legitimately appear at
+      // two severities in one run (DSH-C060 is an error for an unexempted plugin
+      // and a warning for an exempted one), and collapsing them under whichever
+      // severity was seen first would misreport both the count and the level.
+      const mapKey = `${finding.code}|${finding.severity}`
+      const entry = byCode.get(mapKey) ?? { code: finding.code, severity: finding.severity, count: 0 }
       entry.count += 1
-      byCode.set(finding.code, entry)
+      byCode.set(mapKey, entry)
     }
   }
   const errors = [...byCode.values()].filter((entry) => entry.severity === 'error').reduce((sum, entry) => sum + entry.count, 0)
@@ -427,6 +470,8 @@ if (isMain) {
           exemptionsPath: outcome.exemptionsPath,
           targetCount: outcome.targetCount,
           unmatchedPatterns: outcome.unmatchedPatterns,
+          focusPatterns: outcome.focusPatterns,
+          filteredByFocus: outcome.filteredByFocus,
           results: outcome.results,
         },
         null,
@@ -450,6 +495,9 @@ if (isMain) {
           : `${outcome.mountedPackageCount} 个包被挂载为行`
       }`,
     )
+    if (outcome.focusPatterns.length > 0) {
+      console.log(`  关注范围    : ${outcome.focusPatterns.join(', ')}（仅影响 profile 级发现的报告范围）`)
+    }
     if (outcome.unmatchedPatterns.length > 0) {
       console.log(`  未匹配模式  : ${outcome.unmatchedPatterns.length} 个（详见下方 DSH-C071）`)
       for (const pattern of outcome.unmatchedPatterns) console.log(`      · ${pattern}`)
@@ -472,7 +520,12 @@ if (isMain) {
       }
     }
 
-    console.log(`\n汇总：${errors} error / ${warns} warn → ${failed ? '失败' : '通过'}`)
+    if (outcome.filteredByFocus > 0) {
+      console.log(`\n已按关注范围过滤：${outcome.filteredByFocus} 条非关注包的 profile 级依赖发现（未计入上述汇总）`)
+      console.log(`汇总：${errors} error / ${warns} warn → ${failed ? '失败' : '通过'}`)
+    } else {
+      console.log(`\n汇总：${errors} error / ${warns} warn → ${failed ? '失败' : '通过'}`)
+    }
   }
 
   process.exit(failed ? 1 : 0)

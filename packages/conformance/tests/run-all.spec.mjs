@@ -132,9 +132,25 @@ test('summarize：按规则码聚合 error / warn', () => {
   const { byCode, errors, warns } = summarize(outcome.results)
   assert.equal(errors, 0)
   assert.equal(warns, 1)
-  assert.equal(byCode.get('DSH-C030')?.count, 1)
+  assert.equal(byCode.get('DSH-C030|warn')?.count, 1)
   // warn 不使 ok 变 false —— 门禁的 error/warn 分级由此生效
   assert.equal(outcome.ok, true)
+})
+
+test('summarize：同一规则码的两种级别必须分列，不能合并', () => {
+  // DSH-C060 会因命中 compatibility.json 豁免而降级为 warn，所以同一个运行里
+  // 同一代码出现两种级别是合法状态。若按 code 单键合并，先出现的那一级会覆盖
+  // 另一级 —— count 和级别都会报错，且"降级"这件事在汇总里会消失。
+  const results = [
+    { findings: [{ code: 'DSH-C060', severity: 'error', message: '未豁免' }] },
+    { findings: [{ code: 'DSH-C060', severity: 'warn', message: '已豁免' }] },
+  ]
+  const { byCode, errors, warns } = summarize(results)
+  assert.equal(errors, 1)
+  assert.equal(warns, 1)
+  assert.equal(byCode.get('DSH-C060|error')?.count, 1)
+  assert.equal(byCode.get('DSH-C060|warn')?.count, 1)
+  assert.equal(byCode.size, 2)
 })
 
 // ---------------------------------------------------------------------------

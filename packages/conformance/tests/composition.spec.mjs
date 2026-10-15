@@ -260,6 +260,51 @@ test('宿主工具类包出现在 dependencies → DSH-C056（warn，非 C050）
   assert.ok(!findings.some((f) => f.code === 'DSH-C050'), '叶子工具包不应升级为 C050')
 })
 
+// --- focusPackages：把"别人的包"从报告里摘出去 --------------------------
+
+test('focusPackages：非关注包的 profile 级发现被过滤，并计入统计（不静默丢弃）', () => {
+  // 主用例是"检查我自己的插件"：profile 级检查会连带报出宿主自带组件与第三方
+  // 插件的问题，其中 DSH-C050 是 error 级，足以让作者的门禁失败在别人的包上。
+  const hostNodeModules = makeFakeHost(['@deepseek-ai/dsh-home-paths'])
+  const dir = makeProfile({
+    bundles: ['bundle-a'],
+    bundlePackages: [{ name: 'bundle-a', patchYml: insert('alpha', 'pkg-alpha') }],
+    installed: [
+      { name: 'pkg-alpha', version: '1.0.0' },
+      { name: 'someone-elses-plugin', version: '1.0.0', dependencies: { '@deepseek-ai/dsh-home-paths': '0.2.0-rc.2' } },
+      { name: '@me/dsh-plugin-mine', version: '1.0.0', dependencies: { '@deepseek-ai/dsh-home-paths': '0.2.0-rc.2' } },
+    ],
+  })
+  const stats = { filteredByFocus: 0 }
+  const findings = checkComposition(dir, {
+    hostNodeModules,
+    homeDir: null,
+    focus: (name) => name.startsWith('@me/'),
+    stats,
+  })
+  const c050 = findings.filter((f) => f.code === 'DSH-C050')
+  assert.equal(c050.length, 1, `只应保留关注包的 C050，实际 [${findings.map((f) => f.message).join(' | ')}]`)
+  assert.match(c050[0].message, /@me\/dsh-plugin-mine/, '保留的必须是关注包')
+  assert.equal(stats.filteredByFocus, 1, '被过滤的条目必须计数，不能静默丢弃')
+})
+
+test('focusPackages：profile 自身的 dependencies 永远在关注范围内', () => {
+  // profile 的依赖列表是作者自己要修的，不能因为 focus 不匹配被摘掉。
+  const hostNodeModules = makeFakeHost(['@deepseek-ai/dsh-home-paths'])
+  const dir = makeProfile({
+    bundles: [],
+    installed: [],
+    dependencies: { '@deepseek-ai/dsh-home-paths': '0.2.0-rc.2' },
+  })
+  const stats = { filteredByFocus: 0 }
+  const findings = checkComposition(dir, { hostNodeModules, homeDir: null, focus: () => false, stats })
+  assert.ok(
+    findings.some((f) => f.code === 'DSH-C050'),
+    `profile 自身的 C050 不应被 focus 过滤，实际 [${findings.map((f) => f.code).join(', ')}]`,
+  )
+  assert.equal(stats.filteredByFocus, 0)
+})
+
 // --- group carriers (regressions pinned from the boot's own semantics) ----
 
 const GROUP_PATCH = [

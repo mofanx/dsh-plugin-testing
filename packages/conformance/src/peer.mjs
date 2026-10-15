@@ -88,10 +88,13 @@ export function resolveDshVersion(hostVersions) {
 /**
  * @param {string} code
  * @param {string} message
+ * @param {'error' | 'warn'} [severity] Overrides the rule's declared severity.
+ *   Used by DSH-C060/C061 when a covering `compatibility.json` exemption makes
+ *   the mismatch an accepted deviation instead of a blocking one.
  * @returns {import('./manifest.mjs').Finding}
  */
-function finding(code, message) {
-  return { code, severity: severityOf(code), message }
+function finding(code, message, severity) {
+  return { code, severity: severity ?? severityOf(code), message }
 }
 
 /**
@@ -184,6 +187,18 @@ export function checkPeerContract(packageDir, options = {}) {
   // --- C060 / C061 — dsh runtime peers vs the single runtime version -----
   // The runtime compares every dsh peer against `getDshRuntimeVersion()`, not
   // against each peer's own installed version, so we do the same here.
+  //
+  // Severity depends on whether the profile's `compatibility.json` covers this
+  // package+version on this runtime version. `dsh-app-boot`'s `preflight()`
+  // returns no conflict once `issue.exempted` is true, so an exempted row *is*
+  // loaded: the mismatch is a known, accepted deviation rather than a blocking
+  // one. It stays visible — as a warning — because the declared peer range still
+  // claims a host line that is not the one actually running.
+  const exemptionKey = `${name}@${version ?? ''}`
+  const exemptedFor = exemptions[exemptionKey]
+  const exempted =
+    Array.isArray(exemptedFor) && runtimeVersion !== undefined && exemptedFor.includes(runtimeVersion)
+
   /** @type {string[]} */
   const unsatisfied = []
   for (const [dependency, range] of Object.entries(peers)) {
@@ -193,11 +208,16 @@ export function checkPeerContract(packageDir, options = {}) {
     if (diagnosis.satisfied) continue
     unsatisfied.push(dependency)
     if (mounted === false) continue // collapsed into one C066 below
+    const code = diagnosis.direction === 'aboveMax' ? 'DSH-C061' : 'DSH-C060'
+    const detail = `${name} 要求 ${dependency} ${range}，宿主运行时为 ${runtimeVersion}（${diagnosis.direction ?? '不匹配'}）`
     findings.push(
-      finding(
-        diagnosis.direction === 'aboveMax' ? 'DSH-C061' : 'DSH-C060',
-        `${name} 要求 ${dependency} ${range}，宿主运行时为 ${runtimeVersion}（${diagnosis.direction ?? '不匹配'}）`,
-      ),
+      exempted
+        ? finding(
+            code,
+            `${detail} —— 已有 compatibility.json 豁免（${exemptionKey} → ${runtimeVersion}），运行时按放行处理，故降级为提醒`,
+            'warn',
+          )
+        : finding(code, detail),
     )
   }
 
@@ -235,16 +255,11 @@ export function checkPeerContract(packageDir, options = {}) {
   // version. `compatibility.json` authorizes a plugin against runtime versions
   // (`pkg@ver` → `["0.2.0-rc.2"]`), not against each peer's own installed
   // version, so the lookup must not compare per-peer versions.
-  if (mounted !== false && unsatisfied.length > 0) {
-    const key = `${name}@${version ?? ''}`
-    const allowed = exemptions[key]
-    const covered = Array.isArray(allowed) && runtimeVersion !== undefined && allowed.includes(runtimeVersion)
-    if (!covered) {
-      const where = runtimeVersion === undefined ? '未知 DSH 运行时版本' : `宿主 DSH ${runtimeVersion}`
-      findings.push(
-        finding('DSH-C064', `${key} 在 ${where} 上不满足 ${unsatisfied.join(', ')}，且无对应豁免（compatibility.json）`),
-      )
-    }
+  if (mounted !== false && unsatisfied.length > 0 && !exempted) {
+    const where = runtimeVersion === undefined ? '未知 DSH 运行时版本' : `宿主 DSH ${runtimeVersion}`
+    findings.push(
+      finding('DSH-C064', `${exemptionKey} 在 ${where} 上不满足 ${unsatisfied.join(', ')}，且无对应豁免（compatibility.json）`),
+    )
   }
 
   // --- C062 — peer ranges that span major versions (manifest-shape defect,
