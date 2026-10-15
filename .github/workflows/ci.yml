@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install testkit deps
+        working-directory: packages/testkit
+        run: npm ci --no-audit --no-fund
+
+      - name: Install conformance deps
+        working-directory: packages/conformance
+        run: npm ci --no-audit --no-fund
+
+      - name: Unit suites（conformance 70 + testkit 23）
+        run: npm test
+
+      - name: Gate self-check（合成插件 + 合成宿主，完全离线；预期 exit 0）
+        run: |
+          node packages/conformance/src/run-all.mjs --config fixtures/conformance.selfcheck.json
