@@ -123,9 +123,9 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 
 - **静态导入扫描 ≠ 运行时属性访问**：`check-plugin-imports.mjs` 只核对模块导出；`ctx.llm.*` / `ctx.tools.*` 的运行时面必须由真实启动（组合测试）覆盖。
 - **工具的外部依赖路径**（外部引擎 / 客户端桥）属于活体验证范畴，回放车道只覆盖确定性路径。
-- **evals（M1–M7 模型行为维度）**：统计指标，**不阻塞 PR**；夜间车道跑。
-- **UI**：交给 Playwright（T50/T51），不用插件测 UI。
-- 本指南的演进与完整决策史在测试负责人的台账 `dsh-plugin-test-infrastructure-plan.md`（团队无需通读，有争议时查）。
+- **evals（模型行为评测维度）**：统计指标，**不阻塞 PR**；夜间车道跑。
+- **UI**：交给 Playwright，不用插件测 UI。
+- 工具的历史变更见 [`docs/CHANGELOG.md`](CHANGELOG.md)（团队可见）；完整决策史由测试负责人个人维护，需查阅时向其索取。
 
 ---
 
