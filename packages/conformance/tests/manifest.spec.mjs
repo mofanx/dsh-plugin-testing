@@ -217,6 +217,58 @@ test('bundle.patch 未被 exports 覆盖 → DSH-C042', () => {
   expectCode(dir, 'DSH-C042')
 })
 
+test("bundle.patch 不写 './' 前缀时不得误报 DSH-C042", () => {
+  // 回归：patch 路径"相对于包根"（契约 §1.2），加载器按普通路径解析，
+  // `cordis.patch.yml` 与 `./cordis.patch.yml` 指向同一文件；而 exports 的键
+  // 必须以 './' 开头。逐字比对曾把这种完全合法的写法判成 C042。
+  const dir = makePackage(
+    {
+      ...BUNDLE_OK,
+      exports: {
+        '.': './lib/index.js',
+        './cordis.patch.yml': './cordis.patch.yml',
+        './presets/*.patch.yml': './presets/*.patch.yml',
+        './package.json': './package.json',
+      },
+      dsh: { manifestVersion: 1, bundle: { patch: ['cordis.patch.yml', 'presets/standard.patch.yml'] } },
+    },
+    BUNDLE_FILES,
+  )
+  const codes = codesOf(dir)
+  assert.ok(!codes.includes('DSH-C042'), `合法写法不应报 C042，实际 [${codes.join(', ')}]`)
+  assert.deepEqual(codes, [], '该包应当是零发现')
+})
+
+test('bundle.patch 使用反斜杠分隔符时同样按 exports 子路径比对', () => {
+  const dir = makePackage(
+    {
+      ...BUNDLE_OK,
+      exports: {
+        '.': './lib/index.js',
+        './presets/standard.patch.yml': './presets/standard.patch.yml',
+        './package.json': './package.json',
+      },
+      dsh: { manifestVersion: 1, bundle: { patch: 'presets\\standard.patch.yml' } },
+    },
+    ['presets/standard.patch.yml'],
+  )
+  const codes = codesOf(dir)
+  assert.ok(!codes.includes('DSH-C042'), `反斜杠写法不应报 C042，实际 [${codes.join(', ')}]`)
+})
+
+test('归一化不放过真实缺口：patch 确实未被 exports 覆盖时仍报 DSH-C042', () => {
+  // 防止上一条修复把 C042 整体削弱成永不触发。
+  const dir = makePackage(
+    {
+      ...BUNDLE_OK,
+      exports: { '.': './lib/index.js', './package.json': './package.json' },
+      dsh: { manifestVersion: 1, bundle: { patch: 'cordis.patch.yml' } },
+    },
+    ['cordis.patch.yml'],
+  )
+  expectCode(dir, 'DSH-C042')
+})
+
 test("客户端半边缺 exports['./client'] → DSH-C043", () => {
   const dir = makePackage({
     ...CLIENT_OK,

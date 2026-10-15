@@ -3,6 +3,8 @@
 DSH 插件的**静态一致性检查器**。运行时只依赖 `js-yaml`，且**钉在与宿主相同的 `4.3.1`**（见下方设计取舍）。
 
 > ⚠️ 这**不是** DSH 插件，而是一个独立 CLI 工具 —— 它不注册任何 Cordis 服务，不参与插件组合。
+>
+> ⚠️ **发布状态**：包名为占位 scope `@your-scope/dsh-plugin-conformance`（`private: true`），仅供本仓引用，尚未发布到任何 registry。正式发布前需替换 scope、去掉 `private`，并**确定许可证** —— 本仓无 `LICENSE` 文件，故 `package.json` 已移除 `license` 字段，不虚标 `MIT`。
 
 规则依据：`docs/contract-v1.md` 第六节。每个检查项都有稳定错误码 `DSH-C0xx`，CI 报告与豁免说明均引用它。
 
@@ -16,7 +18,7 @@ node src/cli.mjs <packageDir...> [--json] [--strict]
 
 检查：`name`/`version`、`dsh.bundle.patch`（类型 / 是否存在 / 是否被 `exports` 覆盖）、`dsh.manifestVersion`、`dsh.client`（`platform` 必填、`inject` 类型）、`dsh.profile.bundles`、`engines.dsh`（存在性与 SemVer 语法）、`exports` 的 `.` / `./package.json` / `./client`，以及**已移除的 `./invariant`**。
 
-### 版本与 peer 契约（规则 `DSH-C060…C065`）
+### 版本与 peer 契约（规则 `DSH-C057`、`DSH-C060…C066`）
 
 ```bash
 node src/cli-version.mjs <packageDir...> \
@@ -48,9 +50,17 @@ npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
 |---|---|
 | `0` | 通过 |
 | `1` | 有 error（`--strict` 下 warn 也算） |
-| `2` | 用法错误 / 没有检查目标 |
+| `2` | 用法错误 / 没有检查目标（含目标模式全部落空） |
 
 `--json` 输出机器可读结果；`--strict` 用于预发门禁。**error 与 warn 的分级是有意的**：`DSH-C030`（缺 `engines.dsh`）这类不阻断运行的问题不该卡住每一次 PR，但发布前必须清零。
+
+### 门禁自身配置（规则 `DSH-C070`、`DSH-C071`）
+
+这一组不检查插件，只检查**门禁有没有真的在检查东西**。两类都是 error —— 一个悄悄少查的门禁会给出虚假的绿灯，比漏报单条规则更危险：
+
+- **`DSH-C070`**：配置**显式声明**的路径不存在（`hostNodeModules` / `dshHome` / `appDir` / `exemptionsPath`）。刻意区分"未配置"（合法，例如不需要宿主版本时）与"配了但不存在"（笔误）—— 后者此前会把宿主版本静默变成 `undefined`，让 `C060`/`C061`/`C064`/`C066` 全部跳过。
+- **`DSH-C071`**：`packages` / `profiles` 的某个模式未匹配到任何目标。展开为空集时 `every()` 恒真，门禁会以 exit 0"通过"却一个包都没查。
+- 当 `packages` + `profiles` 展开后目标数为 **0** 时，CLI 直接以 **exit 2** 退出并逐个打印未匹配的模式（部分落空 → exit 1 且列出缺口；全部落空 → exit 2）。
 
 **判级取决于"是否被挂载"**：宿主的版本预检只求值它将要 import 的**行**。所以不满足的 peer 在**被挂载为 profile 行的包**上是 `DSH-C060`/`C064`（error，宿主会真的禁用它），在**支撑包**（从不作为行挂载）上只是 `DSH-C066`（warn）。给出的 `profile` 决定了这个判定；不给 profile 时按保守口径全部视为被挂载。
 
@@ -79,3 +89,4 @@ npm test        # node --test "tests/**/*.spec.mjs"
 - **组合算法是移植而非依赖**：`dshmarket/lib/check.js` 不在 `dshmarket` 的 `exports` 中，无法 `import`，因此 `composition.mjs` 复刻其 `composeLayers` 行为，并用测试锁定。
 - **不做的事**：不 boot DSH、不联网、不写盘。这是最便宜的一道门禁，也是团队最先撞上的那类错误。
 - **层栈必须完整**：`bundle 层 → <app>/cordis.patch.yml → profile patch → $DSH_HOME patch`。少一层就会把合法的 profile patch 误判成孤儿 —— 这个坑已踩过并有回归测试。
+- **`group: true` 是载体，不是模块**：boot 把它解析为**内建** `cordis:group` / `@deepseek-ai/cordis-plugin-group`，并刻意豁免它的 disabled 跳过（`if (row.disabled === true && !row.group) continue`）—— 因为该节点本身携带子行列表。所以载体**没有模块名也不该被要求有**：早先把它当作可导入行，会让任何合法的 group 声明都触发**阻断级** `DSH-C053`「没有模块名」。现在载体整体排除出"可导入行"，但它的 `disabled` 仍照常向子行传播，且它不进入 T15 的挂载包集合（否则 `packageRoot('cordis:group')` 会把内建名当成"已挂载的包"）。有回归测试。

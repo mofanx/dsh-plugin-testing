@@ -12,10 +12,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { DEFAULT_TEST_BUNDLES, createTestHome, testHomeArgs, testHomeEnv, withKeyEnv } from '../src/home.mjs'
+import { runLauncher, skipIfUnspawnable } from './spawn-support.mjs'
+
+const here = dirname(fileURLToPath(import.meta.url))
 
 /** The packaged launcher; override with `DSH_BIN` on another install. */
 const DSH_BIN =
@@ -105,23 +108,40 @@ test('cleanup 删除整个 home', () => {
 test(
   '真实启动：裸 home 能 boot 并 dump 出组合（T03 的决定性用例）',
   { timeout: 120_000, skip: existsSync(DSH_BIN) ? false : `未找到 DSH launcher（DSH_BIN=${DSH_BIN}）` },
-  () => {
+  (t) => {
     const home = createTestHome()
     try {
-      const result = spawnSync(process.execPath, [DSH_BIN, '--profile', home.profileName, '--dump-config'], {
+      const result = runLauncher(process.execPath, [DSH_BIN, '--profile', home.profileName, '--dump-config'], {
         env: testHomeEnv(home.homeDir, process.env),
         encoding: 'utf8',
         timeout: 90_000,
       })
-      const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
-      assert.equal(result.status, 0, `launcher 应成功退出，实际 ${result.status}\n${output.slice(0, 2000)}`)
-      assert.match(output, /@deepseek-ai\/dsh-base/, 'dump 应包含 dsh-base 的条目')
-      assert.match(output, /@deepseek-ai\/dsh-headless/, 'dump 应包含 headless 层的 patch 痕迹')
+      // Distinguish "never started" from "started and exited non-zero": only the
+      // latter is a statement about the launcher.
+      if (skipIfUnspawnable(t, result.error)) return
+      assert.equal(
+        result.error,
+        undefined,
+        `launcher 未能启动：${/** @type {NodeJS.ErrnoException} */ (result.error)?.code} ${result.error?.message}`,
+      )
+      assert.equal(result.status, 0, `launcher 应成功退出，实际 ${result.status}\n${result.output.slice(0, 2000)}`)
+      assert.match(result.output, /@deepseek-ai\/dsh-base/, 'dump 应包含 dsh-base 的条目')
+      assert.match(result.output, /@deepseek-ai\/dsh-headless/, 'dump 应包含 headless 层的 patch 痕迹')
     } finally {
       home.cleanup()
     }
   },
 )
+
+test('包根裸导入可用：文档里的 import 能解析（回归）', async () => {
+  // 回归：`exports` 缺 "." 时，Node 对裸导入报 ERR_PACKAGE_PATH_NOT_EXPORTED，
+  // 而团队指南给的正是裸导入写法。包名从 package.json 读取，避免与占位 scope 脱节。
+  const manifest = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8'))
+  const mod = await import(manifest.name)
+  for (const name of ['createTestHome', 'testHomeArgs', 'testHomeEnv', 'replayPatch', 'replayEnv']) {
+    assert.equal(typeof mod[name], 'function', `${manifest.name} 应导出 ${name}`)
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Linking a package under test

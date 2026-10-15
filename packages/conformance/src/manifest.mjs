@@ -63,6 +63,24 @@ function subpathKeys(exportsField) {
 }
 
 /**
+ * Normalize a package-relative file path into the shape `exports` keys use.
+ *
+ * `dsh.bundle.patch` values are "relative to the package root" (contract §1.2)
+ * and the loader resolves them with ordinary path resolution, so both
+ * `cordis.patch.yml` and `./cordis.patch.yml` name the same file. Node's
+ * `exports` keys, however, must start with `./`. Comparing the two forms
+ * verbatim produced a **false** DSH-C042 for a manifest that is perfectly valid
+ * (`"patch": "cordis.patch.yml"` beside `"./cordis.patch.yml": …`).
+ *
+ * @param {string} relPath
+ * @returns {string}
+ */
+function toExportSubpath(relPath) {
+  const slashed = relPath.replace(/\\/g, '/')
+  return slashed.startsWith('./') ? slashed : `./${slashed}`
+}
+
+/**
  * Whether `relPath` is reachable through the declared export subpaths, either
  * exactly or through a `*` pattern such as `./presets/*.patch.yml`.
  *
@@ -70,11 +88,12 @@ function subpathKeys(exportsField) {
  * @param {string} relPath
  */
 function exportCovers(keys, relPath) {
-  if (keys.includes(relPath)) return true
+  const target = toExportSubpath(relPath)
+  if (keys.includes(target)) return true
   for (const key of keys) {
     if (!key.includes('*')) continue
     const pattern = `^${key.split('*').map(escapeRe).join('.*')}$`
-    if (new RegExp(pattern).test(relPath)) return true
+    if (new RegExp(pattern).test(target)) return true
   }
   return false
 }

@@ -31,7 +31,7 @@ jobs:
         working-directory: packages/conformance
         run: npm ci --no-audit --no-fund
 
-      - name: Unit suites（conformance 70 + testkit 23）
+      - name: Unit suites（conformance 116 + testkit 25；其中 6 例需真实 DSH 安装，缺则跳过并给出原因）
         run: npm test
 
       - name: Gate self-check（合成插件 + 合成宿主，完全离线；预期 exit 0）

@@ -111,14 +111,19 @@ for (const spec of [...used.keys()].sort()) {
 
   const subOk = entry.subpaths.includes(subpath)
   const exported = entry.symbols[subpath] ?? []
-  const bad = names.filter((n) => !exported.includes(n))
+  // When the subpath itself is missing there are no symbols to compare against,
+  // so counting every named import as "not exported" would inflate one gap into
+  // 1 + N. Report the subpath gap once and move on.
+  const bad = subOk ? names.filter((n) => !exported.includes(n)) : []
   if (!subOk) genuineGaps += 1
   genuineGaps += bad.length
 
   console.log(`${tag} ${spec}${subOk ? '' : '   <-- 子路径在宿主中不存在'}`)
-  if (names.length > 0) {
+  if (subOk && names.length > 0) {
     console.log(`        具名导入 ${names.length} 个: ${names.join(', ')}`)
     if (bad.length > 0) console.log(`        x 宿主未导出: ${bad.join(', ')}`)
+  } else if (!subOk && names.length > 0) {
+    console.log(`        具名导入 ${names.length} 个（子路径缺失，未逐一核对符号）: ${names.join(', ')}`)
   }
 }
 

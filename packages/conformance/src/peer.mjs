@@ -23,7 +23,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { severityOf } from './rules.mjs'
-import { diagnoseRange } from './semver.mjs'
+import { diagnoseRange, spansUnverifiedMajors } from './semver.mjs'
 
 /** The runtime preflight's exact dsh peer name and its scoped prefix. */
 const DSH_RUNTIME_PEER_NAME = '@deepseek-ai/dsh'
@@ -138,21 +138,13 @@ export function readExemptions(filePath) {
 }
 
 /**
- * Whether a single `||` clause spans two or more major versions. Only an
- * *implicit* cross-major span within one clause is forbidden (e.g.
- * `>=1.0.0 <3.0.0` silently claims 2.x); an explicit union of per-major
- * clauses (`>=1.0.0 <2.0.0 || >=2.0.0 <3.0.0`) is an honest per-line
- * declaration and is not flagged.
+ * Whether a single clause silently spans majors the author never declared.
+ * Thin re-export of the semver-level detector so this module stays about policy
+ * (which peers are graded, and how) rather than range arithmetic.
  * @param {unknown} range
  */
 function crossesMajor(range) {
-  if (typeof range !== 'string') return false
-  for (const clause of range.split('||')) {
-    const majors = [...clause.matchAll(/(?:>=|>|<=|<)\s*(\d+)\.\d+\.\d+/g)].map((match) => Number(match[1]))
-    if (majors.length < 2) continue
-    if (Math.max(...majors) - Math.min(...majors) >= 2) return true
-  }
-  return false
+  return spansUnverifiedMajors(range)
 }
 
 /**
@@ -260,7 +252,12 @@ export function checkPeerContract(packageDir, options = {}) {
   for (const [dependency, range] of Object.entries(peers)) {
     if (!isDshRuntimePeer(dependency)) continue
     if (crossesMajor(range)) {
-      findings.push(finding('DSH-C062', `${dependency} 的 peer 范围跨主版本：${range}`))
+      findings.push(
+        finding(
+          'DSH-C062',
+          `${dependency} 的 peer 范围跨主版本（跨 2 个以上 major，或单侧无界因而隐含宣称未来全部 major）：${range} —— 请改用逐 major 显式并集，如 \`>=1.0.0 <2.0.0 || >=2.0.0 <3.0.0\``,
+        ),
+      )
     }
   }
 

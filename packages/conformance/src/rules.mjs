@@ -61,6 +61,16 @@ export const RULES = {
   'DSH-C064': { severity: 'error', title: '存在不满足的 peer 但无 compatibility.json 豁免', task: 'T12' },
   'DSH-C065': { severity: 'warn', title: '存在豁免条目但对应插件版本已变更（豁免失效）', task: 'T12' },
   'DSH-C066': { severity: 'warn', title: '支撑包（非 profile 行）的 peer 不满足宿主（尚未阻断）', task: 'T15' },
+
+  // --- gate configuration (T13) -----------------------------------------
+  // A gate that checks nothing must never look like a gate that passed. These
+  // two codes make a misconfigured run a loud failure instead of a vacuous green.
+  'DSH-C070': {
+    severity: 'error',
+    title: '配置显式声明的路径不存在（宿主 node_modules / DSH_HOME / 豁免文件）',
+    task: 'T13',
+  },
+  'DSH-C071': { severity: 'error', title: '目标模式未匹配到任何插件包 / profile', task: 'T13' },
 }
 
 /** Rules implemented by the T10 manifest/exports pass. */
@@ -88,6 +98,13 @@ export const COMPOSITION_RULE_CODES = Object.freeze(
 export const MOUNTED_RULE_CODES = Object.freeze(
   Object.entries(RULES)
     .filter(([, rule]) => rule.task === 'T15')
+    .map(([code]) => code),
+)
+
+/** Rules that police the gate's own configuration (T13). */
+export const CONFIG_RULE_CODES = Object.freeze(
+  Object.entries(RULES)
+    .filter(([, rule]) => rule.task === 'T13')
     .map(([code]) => code),
 )
 

@@ -20,10 +20,15 @@
     "./semver": "./src/semver.mjs",
     "./rules": "./src/rules.mjs",
     "./api-surface": "./src/api-surface.mjs",
+    "./removed-apis": "./src/removed-apis.mjs",
     "./package.json": "./package.json"
   },
   "files": [
-    "src"
+    "src",
+    "scripts",
+    "removed-apis.json",
+    "api-baseline.json",
+    "README.md"
   ],
   "engines": {
     "node": ">=22.19.0"
@@ -33,7 +38,6 @@
     "test:conformance": "node src/run-all.mjs",
     "test:conformance:strict": "node src/run-all.mjs --strict"
   },
-  "license": "MIT",
   "dependencies": {
     "js-yaml": "4.3.1",
     "semver": "^7.8.5"

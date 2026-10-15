@@ -85,6 +85,18 @@ test('diagnoseRange 区分 belowMin 与 aboveMax', () => {
   assert.equal(diagnoseRange('4.0.4', '~4.0.4').satisfied, true)
 })
 
+test('diagnoseRange 的方向判定与满足性判定共用同一预发布策略', () => {
+  // 满足性用 includePrerelease: true 对齐运行时；方向判定若用 npm 默认策略，
+  // 同一个版本就可能被一个调用判为满足、被另一个判为"界外"。
+  // 预发布宿主满足范围时不得给出方向。
+  const satisfied = diagnoseRange('0.2.1-alpha.2', '>=0.2.0 <0.3.0')
+  assert.equal(satisfied.satisfied, true)
+  assert.equal(satisfied.direction, null)
+  // 预发布版本位于下界之下 / 上界之上时仍要分得清方向。
+  assert.equal(diagnoseRange('0.1.0-beta.1', '>=0.2.0-rc.2 <0.3.0').direction, 'belowMin')
+  assert.equal(diagnoseRange('3.0.0-alpha.1', '<2.0.0').direction, 'aboveMax')
+})
+
 // --- peer contract -------------------------------------------------------
 
 const SAMPLE = {
@@ -182,6 +194,44 @@ test('C062 不误报：单 major 范围与 0.x 线范围都不算跨主版本', 
   })
   const unionCodes = codesOf(union, { hostVersions: { '@deepseek-ai/dsh-llm': '1.5.0' } })
   assert.ok(!unionCodes.includes('DSH-C062'), `显式并集不应报 C062，实际 [${unionCodes.join(', ')}]`)
+})
+
+test('C062 覆盖单侧无界的范围：开放侧隐含宣称的 major 从未被验证', () => {
+  // 回归：旧实现用正则匹配 ">=x.y.z" 三段版本，`>=1.0.0`（无上界）与
+  // `<2.0.0`（无下界）都逃过判定 —— 而它们宣称的宿主线比双侧范围更多。
+  for (const range of ['>=1.0.0', '>1.0.0', '<=3.0.0', '<2.0.0']) {
+    const dir = makePackage({
+      name: '@scope/dsh-plugin-open-ended',
+      version: '1.0.0',
+      peerDependencies: { '@deepseek-ai/dsh-llm': range },
+    })
+    expectCode(dir, { hostVersions: { '@deepseek-ai/dsh-llm': '1.5.0' } }, 'DSH-C062')
+  }
+})
+
+test('C062 覆盖部分版本与连字符区间（不再依赖三段版本号的字面匹配）', () => {
+  for (const range of ['>=1 <3', '1.0.0 - 4.0.0']) {
+    const dir = makePackage({
+      name: '@scope/dsh-plugin-partial',
+      version: '1.0.0',
+      peerDependencies: { '@deepseek-ai/dsh-llm': range },
+    })
+    expectCode(dir, { hostVersions: { '@deepseek-ai/dsh-llm': '1.5.0' } }, 'DSH-C062')
+  }
+})
+
+test('C062 不误报：精确钉住 / caret / tilde / x-range / 单 major 双侧 / 通配', () => {
+  // 这些形态要么只覆盖一条宿主线，要么是契约 §3.2 推荐的精确钉住写法，
+  // 归一化为 semver 比较器后必须仍然干净。
+  for (const range of ['0.2.0-rc.2', '^1.0.0', '~1.2.3', '1.x', '>=1.0.0 <2.0.0', '*']) {
+    const dir = makePackage({
+      name: '@scope/dsh-plugin-bounded',
+      version: '1.0.0',
+      peerDependencies: { '@deepseek-ai/dsh-llm': range },
+    })
+    const codes = codesOf(dir, { hostVersions: { '@deepseek-ai/dsh-llm': '1.5.0' } })
+    assert.ok(!codes.includes('DSH-C062'), `${range} 不应报 C062，实际 [${codes.join(', ')}]`)
+  }
 })
 
 test('engines.dsh 与 peer 范围不一致 → DSH-C063', () => {

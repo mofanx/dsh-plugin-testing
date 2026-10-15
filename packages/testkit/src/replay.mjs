@@ -21,6 +21,12 @@
  * `$DSH_SNAPSHOT_FILE`. Prefer the env var: one patch then serves every
  * scenario, and the fixture path never has to be baked into YAML.
  *
+ * ⚠️ `sessionRoot` is passed to the child verbatim and the host resolves it
+ * against the **child process's cwd**, not against the isolated home. The
+ * `./.sessions` default therefore drops session logs into whatever directory the
+ * launcher was started from. Callers that care about isolation should pass an
+ * absolute path inside their throwaway home.
+ *
  * Recording is **not** replay's job — `@deepseek-ai/dsh-session-snapshot`
  * records. Replay only plays back a fixture that already exists.
  *

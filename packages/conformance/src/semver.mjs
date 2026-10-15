@@ -80,8 +80,69 @@ export function satisfies(version, range) {
 export function diagnoseRange(version, range) {
   if (typeof version !== 'string' || typeof range !== 'string') return { satisfied: false, direction: null }
   if (semver.valid(version) === null) return { satisfied: false, direction: null }
+  // The direction probe must use the same prerelease policy as the satisfaction
+  // check above, otherwise a prerelease version could be graded as satisfied by
+  // one call and "outside" by the other.
   if (semver.satisfies(version, range, { includePrerelease: true })) return { satisfied: true, direction: null }
-  if (semver.ltr(version, range)) return { satisfied: false, direction: 'belowMin' }
-  if (semver.gtr(version, range)) return { satisfied: false, direction: 'aboveMax' }
+  if (semver.ltr(version, range, { includePrerelease: true })) return { satisfied: false, direction: 'belowMin' }
+  if (semver.gtr(version, range, { includePrerelease: true })) return { satisfied: false, direction: 'aboveMax' }
   return { satisfied: false, direction: null }
+}
+
+/**
+ * Does `range` silently claim host majors it never declared? (DSH-C062)
+ *
+ * Two shapes qualify, because both cover more than one major line:
+ *
+ *  - a clause bounded on both sides whose majors span two or more
+ *    (`>=1.0.0 <3.0.0` covers 1.x *and* 2.x without saying so);
+ *  - a clause bounded on only one side (`>=1.0.0`, `<2.0.0`), which claims every
+ *    major on the open side — including all future ones.
+ *
+ * An explicit union of per-major clauses (`>=1.0.0 <2.0.0 || >=2.0.0 <3.0.0`) is
+ * an honest per-line declaration and is **not** flagged.
+ *
+ * This parses the range with `semver` rather than pattern-matching the string,
+ * so partial versions (`>=1 <3`), hyphen ranges (`1.0.0 - 3.0.0`) and open-ended
+ * bounds are judged the same way as fully spelled-out comparators.
+ *
+ * Note: an exact pin (`0.2.0-rc.2`) and a single-major shorthand (`^1.0.0`,
+ * `~4.0.4`, `1.x`) all expand to a one-sided-looking comparator pair with
+ * majors one apart, and are deliberately not flagged.
+ *
+ * @param {unknown} range
+ * @returns {boolean}
+ */
+export function spansUnverifiedMajors(range) {
+  if (typeof range !== 'string') return false
+  /** @type {InstanceType<typeof semver.Range>} */
+  let parsed
+  try {
+    parsed = new semver.Range(range)
+  } catch {
+    return false
+  }
+  for (const clause of parsed.set) {
+    /** @type {Set<number>} */
+    const majors = new Set()
+    let boundedBelow = false
+    let boundedAbove = false
+    for (const comparator of clause) {
+      // The ANY comparator (`*`) has an empty `value` and no usable `semver`;
+      // it carries no concrete bound and is not judged here.
+      if (comparator.value === '') continue
+      majors.add(comparator.semver.major)
+      if (comparator.operator === '>' || comparator.operator === '>=') boundedBelow = true
+      else if (comparator.operator === '<' || comparator.operator === '<=') boundedAbove = true
+      // An exact pin has an empty operator but bounds both sides.
+      else {
+        boundedBelow = true
+        boundedAbove = true
+      }
+    }
+    if (majors.size === 0) continue
+    if (!boundedBelow || !boundedAbove) return true
+    if (Math.max(...majors) - Math.min(...majors) >= 2) return true
+  }
+  return false
 }

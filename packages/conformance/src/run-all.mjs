@@ -37,11 +37,30 @@ import { severityOf, titleOf } from './rules.mjs'
  * @property {string[]} [profiles]
  */
 
-/** @param {string | undefined} value */
-function existingDir(value) {
-  if (value === undefined) return null
+/**
+ * @typedef {object} ResolvedPath
+ * @property {string | null} path resolved absolute path, or `null` if unusable
+ * @property {boolean} configured the config/env actually named this path
+ * @property {boolean} missing it was named but does not exist on disk
+ * @property {string | undefined} raw the value as declared, for diagnostics
+ */
+
+/**
+ * Resolve an optional configured path.
+ *
+ * Deliberately distinguishes "not configured" from "configured but absent".
+ * Collapsing the two was a silent-green bug: a typo in `hostNodeModules` turned
+ * the host version into `undefined`, which made the peer pass skip every
+ * runtime-graded rule (DSH-C060/C061/C064/C066) and report a clean gate.
+ *
+ * @param {string | undefined} value
+ * @returns {ResolvedPath}
+ */
+function resolveConfiguredPath(value) {
+  if (value === undefined) return { path: null, configured: false, missing: false, raw: undefined }
   const absolute = resolve(value)
-  return existsSync(absolute) ? absolute : null
+  const present = existsSync(absolute)
+  return { path: present ? absolute : null, configured: true, missing: !present, raw: value }
 }
 
 /**
@@ -87,6 +106,50 @@ function asStringList(value) {
 }
 
 /**
+ * Expand a whole declared target list, reporting which patterns matched nothing.
+ *
+ * The `unmatched` half exists because an empty expansion used to be
+ * indistinguishable from success: `results.every(...)` is vacuously true over an
+ * empty list, so a config whose paths had drifted reported `ok` and exit 0
+ * while checking zero packages.
+ *
+ * @param {string[]} patterns
+ * @returns {{ dirs: string[], unmatched: string[] }}
+ */
+export function expandTargets(patterns) {
+  /** @type {string[]} */
+  const dirs = []
+  /** @type {string[]} */
+  const unmatched = []
+  for (const pattern of asStringList(patterns)) {
+    const expanded = expandPattern(pattern).filter((entry) => existsSync(entry))
+    if (expanded.length === 0) unmatched.push(pattern)
+    dirs.push(...expanded)
+  }
+  return { dirs, unmatched }
+}
+
+/**
+ * Resolve which `compatibility.json` the run should judge against.
+ *
+ * An explicitly configured file wins and is graded as-is (including "named but
+ * absent" → DSH-C070). Otherwise the first declared profile's own copy is used
+ * when it exists.
+ *
+ * @param {ConformanceConfig} config
+ * @param {string[]} profileDirs
+ * @returns {ResolvedPath}
+ */
+function resolveExemptionsPath(config, profileDirs) {
+  if (config.exemptionsPath !== undefined) return resolveConfiguredPath(config.exemptionsPath)
+  const fromProfile = profileDirs[0] !== undefined ? join(profileDirs[0], 'compatibility.json') : undefined
+  if (fromProfile === undefined || !existsSync(fromProfile)) {
+    return { path: null, configured: false, missing: false, raw: undefined }
+  }
+  return { path: fromProfile, configured: true, missing: false, raw: fromProfile }
+}
+
+/**
  * Run every static pass over the declared targets.
  *
  * @param {ConformanceConfig} config
@@ -96,30 +159,61 @@ function asStringList(value) {
  *   exemptionsPath: string | null,
  *   packageDirs: string[],
  *   profileDirs: string[],
+ *   unmatchedPatterns: string[],
+ *   targetCount: number,
  *   mountedPackageCount: number | null,
- *   results: { target: string, kind: 'package' | 'profile', findings: import('./manifest.mjs').Finding[] }[],
+ *   results: { target: string, kind: 'package' | 'profile' | 'config', findings: import('./manifest.mjs').Finding[] }[],
  * }}
  */
 export function runAll(config) {
-  const hostNodeModules = existingDir(config.hostNodeModules)
-  const dshHome = existingDir(config.dshHome)
-  const packageDirs = asStringList(config.packages).flatMap(expandPattern).filter((dir) => existsSync(dir))
-  const profileDirs = asStringList(config.profiles).flatMap(expandPattern).filter((dir) => existsSync(dir))
+  const host = resolveConfiguredPath(config.hostNodeModules)
+  const home = resolveConfiguredPath(config.dshHome)
+  const app = resolveConfiguredPath(config.appDir)
+  const hostNodeModules = host.path
+  const dshHome = home.path
 
-  // Exemptions belong to a profile; the first declared profile is the one the
-  // plugins are judged against unless the config names a file explicitly.
-  const exemptionsPath =
-    existingDir(config.exemptionsPath) ??
-    (profileDirs[0] !== undefined && existsSync(join(profileDirs[0], 'compatibility.json'))
-      ? join(profileDirs[0], 'compatibility.json')
-      : config.exemptionsPath !== undefined
-        ? resolve(config.exemptionsPath)
-        : null)
+  const packageTargets = expandTargets(asStringList(config.packages))
+  const profileTargets = expandTargets(asStringList(config.profiles))
+  const packageDirs = packageTargets.dirs
+  const profileDirs = profileTargets.dirs
+  const exemptions = resolveExemptionsPath(config, profileDirs)
+  const exemptionsPath = exemptions.path
+
+  // --- T13: the gate's own configuration is itself checked ----------------
+  // Everything here is an error, never a warn: each one silently removes
+  // coverage, and a gate that quietly checks less is worse than no gate.
+  /** @type {import('./manifest.mjs').Finding[]} */
+  const configFindings = []
+  for (const [label, resolved] of /** @type {[string, ResolvedPath][]} */ ([
+    ['hostNodeModules', host],
+    ['dshHome', home],
+    ['appDir', app],
+    ['exemptionsPath', exemptions],
+  ])) {
+    if (!resolved.missing) continue
+    configFindings.push({
+      code: 'DSH-C070',
+      severity: severityOf('DSH-C070'),
+      message: `配置声明的 ${label} 不存在：${resolve(String(resolved.raw))} —— 依赖它的检查无法求值，不能当作"未配置"静默跳过`,
+    })
+  }
+  for (const [label, unmatched] of [
+    ['packages', packageTargets.unmatched],
+    ['profiles', profileTargets.unmatched],
+  ]) {
+    for (const pattern of unmatched) {
+      configFindings.push({
+        code: 'DSH-C071',
+        severity: severityOf('DSH-C071'),
+        message: `配置的 ${label} 模式未匹配到任何目标：${pattern}（路径写错会使该门禁静默空转）`,
+      })
+    }
+  }
 
   const hostVersions = hostNodeModules !== null ? readHostVersions(hostNodeModules) : {}
   const dshRuntimeVersion = resolveDshVersion(hostVersions)
-  const exemptions = exemptionsPath !== null ? readExemptions(exemptionsPath) : {}
-  const appDir = existingDir(config.appDir) ?? (hostNodeModules !== null ? dirname(hostNodeModules) : null)
+  const exemptionEntries = exemptionsPath !== null ? readExemptions(exemptionsPath) : {}
+  const appDir = app.path ?? (hostNodeModules !== null ? dirname(hostNodeModules) : null)
 
   // T15 — grade peers by whether the package is actually mounted as a loader
   // row. The union across every declared profile is used: being mounted in any
@@ -135,16 +229,32 @@ export function runAll(config) {
           ]),
         )
 
-  /** @type {{ target: string, kind: 'package' | 'profile', findings: import('./manifest.mjs').Finding[] }[]} */
+  /** @type {{ target: string, kind: 'package' | 'profile' | 'config', findings: import('./manifest.mjs').Finding[] }[]} */
   const results = []
+  if (configFindings.length > 0) {
+    results.push({ target: '(门禁配置)', kind: 'config', findings: configFindings })
+  }
   for (const directory of packageDirs) {
+    // T10 runs first; when the manifest itself cannot be read, its single
+    // DSH-C000 is the whole story. Running the peer pass anyway would emit a
+    // second, identical DSH-C000 for the same one-line cause and double-count
+    // it in the summary.
+    const manifestFindings = checkManifest(directory, { dshRuntimeVersion })
+    const unreadable = manifestFindings.some((finding) => finding.code === 'DSH-C000')
     results.push({
       target: directory,
       kind: 'package',
-      findings: [
-        ...checkManifest(directory, { dshRuntimeVersion }),
-        ...checkPeerContract(directory, { hostVersions, exemptions, exemptionsPath, mountedNames }),
-      ],
+      findings: unreadable
+        ? manifestFindings
+        : [
+            ...manifestFindings,
+            ...checkPeerContract(directory, {
+              hostVersions,
+              exemptions: exemptionEntries,
+              exemptionsPath,
+              mountedNames,
+            }),
+          ],
     })
   }
   for (const directory of profileDirs) {
@@ -155,13 +265,22 @@ export function runAll(config) {
     })
   }
 
-  const ok = results.every((result) => result.findings.every((finding) => finding.severity !== 'error'))
+  // `targetCount > 0` is part of the invariant, not a separate concern: over an
+  // empty result list `every()` is vacuously true, so without it `ok === true`
+  // would mean "nothing failed" rather than "everything passed". With it,
+  // `ok === true` guarantees at least one target was actually checked. A run
+  // whose only results are config findings is therefore never `ok`.
+  const ok =
+    packageDirs.length + profileDirs.length > 0 &&
+    results.every((result) => result.findings.every((finding) => finding.severity !== 'error'))
   return {
     ok,
     hostNodeModules,
     exemptionsPath,
     packageDirs,
     profileDirs,
+    unmatchedPatterns: [...packageTargets.unmatched, ...profileTargets.unmatched],
+    targetCount: packageDirs.length + profileDirs.length,
     mountedPackageCount: mountedNames === null ? null : mountedNames.size,
     results,
   }
@@ -229,7 +348,13 @@ const USAGE = `用法: dsh-plugin-conformance-all [选项] [额外的插件包�
 
 环境变量回退：DSH_HOST_NODE_MODULES、DSH_HOME。
 
-这是 T13 的单一门禁命令，依次运行 T10（清单/exports）、T11（组合装载）、T12（版本/peer）。
+这是 T13 的单一门禁命令，依次运行 T10（清单/exports）、T11（组合装载）、T12（版本/peer），
+并检查门禁自身配置（T13）：配置显式声明的路径不存在 → DSH-C070；目标模式未匹配到任何目标
+→ DSH-C071。
+
+退出码：0 通过；1 有 error（--strict 下 warn 也算）；2 用法错误 / 没有检查目标
+（含 packages+profiles 全部落空 —— 门禁没查任何东西时不会报"通过"）。
+
 规则依据: docs/contract-v1.md §6`
 
 const isMain = process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))
@@ -259,22 +384,63 @@ if (isMain) {
   }
 
   const outcome = runAll(config)
+
+  // A declared pattern set that expands to zero targets is a usage error, not a
+  // pass. Exit 2 keeps the documented contract ("用法错误 / 无检查目标") and makes
+  // a drifted path impossible to mistake for a clean gate.
+  if (outcome.targetCount === 0) {
+    if (args.json) {
+      console.log(
+        JSON.stringify(
+          {
+            ok: false,
+            noTargets: true,
+            unmatchedPatterns: outcome.unmatchedPatterns,
+            configPath: existsSync(configPath) ? configPath : null,
+            results: outcome.results,
+          },
+          null,
+          2,
+        ),
+      )
+    } else {
+      console.log(USAGE)
+      console.log(`\n✗ 没有要检查的目标：配置的模式一个都没匹配到（配置：${existsSync(configPath) ? configPath : '未找到'}）`)
+      for (const pattern of outcome.unmatchedPatterns) console.log(`    · 未匹配：${pattern}`)
+      console.log('  门禁未检查任何东西，因此不作为"通过"。')
+    }
+    process.exit(2)
+  }
+
   const { byCode, errors, warns } = summarize(outcome.results)
   const failed = errors > 0 || (args.strict && warns > 0)
 
   if (args.json) {
     console.log(
       JSON.stringify(
-        { ok: !failed, strict: args.strict, errors, warns, hostNodeModules: outcome.hostNodeModules, exemptionsPath: outcome.exemptionsPath, results: outcome.results },
+        {
+          ok: !failed,
+          strict: args.strict,
+          errors,
+          warns,
+          hostNodeModules: outcome.hostNodeModules,
+          exemptionsPath: outcome.exemptionsPath,
+          targetCount: outcome.targetCount,
+          unmatchedPatterns: outcome.unmatchedPatterns,
+          results: outcome.results,
+        },
         null,
         2,
       ),
     )
   } else {
     console.log('DSH 插件一致性门禁')
+    /** @param {string | null} resolved @param {string | undefined} declared @param {string} fallback */
+    const pathLine = (resolved, declared, fallback) =>
+      resolved ?? (declared !== undefined ? `✗ ${declared}（不存在，见 DSH-C070）` : fallback)
     console.log(`  配置        : ${existsSync(configPath) ? configPath : '（未找到，使用命令行/环境变量）'}`)
-    console.log(`  宿主        : ${outcome.hostNodeModules ?? '（未指定）'}`)
-    console.log(`  豁免        : ${outcome.exemptionsPath ?? '（未指定）'}`)
+    console.log(`  宿主        : ${pathLine(outcome.hostNodeModules, config.hostNodeModules, '（未指定）')}`)
+    console.log(`  豁免        : ${pathLine(outcome.exemptionsPath, config.exemptionsPath, '（未指定）')}`)
     console.log(`  插件包      : ${outcome.packageDirs.length} 个`)
     console.log(`  profile     : ${outcome.profileDirs.length} 个`)
     console.log(
@@ -284,6 +450,10 @@ if (isMain) {
           : `${outcome.mountedPackageCount} 个包被挂载为行`
       }`,
     )
+    if (outcome.unmatchedPatterns.length > 0) {
+      console.log(`  未匹配模式  : ${outcome.unmatchedPatterns.length} 个（详见下方 DSH-C071）`)
+      for (const pattern of outcome.unmatchedPatterns) console.log(`      · ${pattern}`)
+    }
 
     if (byCode.size > 0) {
       console.log('\n按规则汇总：')

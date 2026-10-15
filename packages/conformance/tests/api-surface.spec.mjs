@@ -16,6 +16,15 @@ import { collectApiSurface, diffApiSurface, listHostPackages, readPackageSurface
 /** The real packaged host tree; override with `DSH_HOST_NODE_MODULES` on another machine. */
 const REAL_HOST = process.env.DSH_HOST_NODE_MODULES ?? 'D:\\Program Files\\DSH NEXT\\resources\\app\\node_modules'
 
+/**
+ * `skip` value for the real-host case: `false` when runnable, else the reason.
+ * A bare `skip: true` would show up in CI as an unexplained `# SKIP`, which
+ * hides *which* path was missing — name the variable and the path instead.
+ */
+const hostSkip = existsSync(REAL_HOST)
+  ? false
+  : `未找到真实宿主 node_modules（DSH_HOST_NODE_MODULES=${REAL_HOST}）`
+
 /** Build a throwaway `@deepseek-ai` scope with two packages. */
 function makeFixtureTree() {
   const root = mkdtempSync(join(tmpdir(), 'dsh-api-'))
@@ -147,7 +156,7 @@ test('an unchanged surface produces no entries', () => {
 // Real host
 // ---------------------------------------------------------------------------
 
-test('the real host yields a populated symbol surface', { skip: !existsSync(REAL_HOST) }, () => {
+test('the real host yields a populated symbol surface', { skip: hostSkip }, () => {
   const surface = collectApiSurface(REAL_HOST)
   const names = Object.keys(surface.packages)
   assert.ok(names.length > 100, `expected many packages, saw ${names.length}`)

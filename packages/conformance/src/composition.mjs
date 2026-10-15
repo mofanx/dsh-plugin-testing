@@ -89,25 +89,41 @@ function flattenEntries(nodes) {
   return rows
 }
 
-/** Rows whose specifiers the Loader can attempt to import. */
+/**
+ * Rows whose specifiers the Loader can attempt to import.
+ *
+ * A `group: true` entry is a **carrier**, not a module: the boot resolves it to
+ * the builtin `cordis:group` / `@deepseek-ai/cordis-plugin-group` plugin
+ * (`dsh-app-boot`: `carrier()` returns `"group"` for the `Group` builtin), and it
+ * is exempt from the disabled-skip only because the node itself carries the
+ * child list (`if (row.disabled === true && !row.group) continue`). Treating it
+ * as an importable row produced a **blocking false positive** — C053
+ * "entry … 没有模块名" fired for every legitimate group declared in a user/home
+ * patch — and let a named carrier leak `cordis:group` into the mounted set.
+ *
+ * The group's `disabled` state still propagates to its children: that is what
+ * decides whether *they* are importable.
+ */
 function resolvableEntries(nodes) {
   const rows = []
   const walk = (list, inheritedLayer, parentDisabled = 'active') => {
     for (const node of list) {
       const layer = typeof node.layer === 'string' ? node.layer : inheritedLayer
       if (layer === undefined) continue
-      const descendantsDisabled = combineDisabled(parentDisabled, disabledState(node.disabled))
-      const activation = node.group === true ? 'required' : descendantsDisabled
-      if (activation !== 'disabled') {
-        rows.push({
-          id: node.id,
-          layer,
-          kind: 'insert',
-          name: node.name,
-          activation: activation === 'conditional' ? 'conditional' : 'required',
-        })
+      const ownDisabled = combineDisabled(parentDisabled, disabledState(node.disabled))
+      if (node.group === true) {
+        // Carrier: never a row of its own; only its children can be imported.
+        if (Array.isArray(node.config)) walk(node.config, layer, ownDisabled)
+        continue
       }
-      if (node.group === true && Array.isArray(node.config)) walk(node.config, layer, descendantsDisabled)
+      if (ownDisabled === 'disabled') continue
+      rows.push({
+        id: node.id,
+        layer,
+        kind: 'insert',
+        name: node.name,
+        activation: ownDisabled === 'conditional' ? 'conditional' : 'required',
+      })
     }
   }
   walk(nodes)
@@ -528,6 +544,11 @@ export function collectMountedPackageNames(profileDir, options = {}) {
   const names = new Set()
   for (const row of composeLayers(layers).resolvableRows) {
     if (typeof row.name !== 'string' || row.name === '') continue
+    // Only a bare module specifier names an installable package. Builtin
+    // carriers (`cordis:group`, `cordis:include`) and path-like rows do not, and
+    // letting them through would put a non-package into the mounted set that
+    // decides C060-vs-C066 grading.
+    if (!isBareLoaderSpecifier(row.name)) continue
     names.add(packageRoot(row.name) ?? row.name)
   }
   return names

@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { checkComposition, composeLayers, parsePatchText } from '../src/composition.mjs'
+import { checkComposition, collectMountedPackageNames, composeLayers, parsePatchText } from '../src/composition.mjs'
 import { COMPOSITION_RULE_CODES } from '../src/rules.mjs'
 
 const tempDirs = []
@@ -258,6 +258,84 @@ test('宿主工具类包出现在 dependencies → DSH-C056（warn，非 C050）
   assert.ok(warn, `期望 DSH-C056，实际得到 [${findings.map((f) => f.code).join(', ')}]`)
   assert.equal(warn.severity, 'warn')
   assert.ok(!findings.some((f) => f.code === 'DSH-C050'), '叶子工具包不应升级为 C050')
+})
+
+// --- group carriers (regressions pinned from the boot's own semantics) ----
+
+const GROUP_PATCH = [
+  '- insert:',
+  '    - id: my-group',
+  '      group: true',
+  '      config:',
+  '        - id: child',
+  "          name: 'pkg-alpha'",
+  '',
+].join('\n')
+
+test('user patch 里的 group 容器不报 DSH-C053（carrier 误报回归）', () => {
+  // 回归：`group: true` 是**载体**（boot 解析为内建 cordis:group），不是模块，
+  // 因此它没有模块名也不该被要求有。此前它被当作可导入行，导致任何合法的
+  // group 声明都触发阻断级 DSH-C053「没有模块名」。
+  const dir = makeProfile({
+    bundles: ['bundle-a'],
+    bundlePackages: [{ name: 'bundle-a', patchYml: insert('alpha', 'pkg-alpha') }],
+    installed: [{ name: 'pkg-alpha', version: '1.0.0' }],
+    userPatch: GROUP_PATCH,
+  })
+  const findings = checkComposition(dir, { hostNodeModules: null, homeDir: null })
+  assert.deepEqual(
+    findings.map((f) => f.code),
+    [],
+    `合法的 group 容器应零发现，实际 [${findings.map((f) => f.code).join(', ')}]`,
+  )
+})
+
+test('group 的子行仍按可导入行核对（C053 不因载体而被削弱）', () => {
+  // 反向保证：容器本身不报，但它引用的包确实没装时仍要报。
+  const dir = makeProfile({
+    bundles: ['bundle-a'],
+    bundlePackages: [{ name: 'bundle-a', patchYml: insert('alpha', 'pkg-alpha') }],
+    installed: [{ name: 'pkg-alpha', version: '1.0.0' }],
+    userPatch: GROUP_PATCH.replace("name: 'pkg-alpha'", "name: 'pkg-not-installed'"),
+  })
+  expectCode(dir, 'DSH-C053')
+})
+
+test('group 的子行在 group 被禁用时不算挂载', () => {
+  // boot：`if (row.disabled === true && !row.group) continue` —— group 被保留是
+  // 为了带走子行，但禁用的 group 下子行不应再被视为可导入。
+  const layers = [
+    {
+      label: 'user',
+      kind: 'user',
+      patches: parsePatchText(GROUP_PATCH.replace('      group: true', '      group: true\n      disabled: true')),
+    },
+  ]
+  assert.deepEqual(composeLayers(layers).resolvableRows, [])
+})
+
+test('group 容器不进入挂载包集合（T15 判级不受载体污染）', () => {
+  // 载体本身是"可解析行"（boot 会把它解析成内建插件），但它**不是**一个已挂载的
+  // npm 包。用内建名声明的那种写法尤其容易污染：packageRoot('cordis:group')
+  // 会返回 'cordis:group'，从而混进决定 C060/C066 分级的集合。
+  const viaFlag = makeProfile({
+    bundles: ['bundle-a'],
+    bundlePackages: [{ name: 'bundle-a', patchYml: insert('alpha', 'pkg-alpha') }],
+    installed: [{ name: 'pkg-alpha', version: '1.0.0' }],
+    userPatch: GROUP_PATCH,
+  })
+  assert.deepEqual([...collectMountedPackageNames(viaFlag, { hostNodeModules: null, homeDir: null })].sort(), ['pkg-alpha'])
+
+  const viaBuiltinName = makeProfile({
+    bundles: ['bundle-a'],
+    bundlePackages: [{ name: 'bundle-a', patchYml: insert('alpha', 'pkg-alpha') }],
+    installed: [{ name: 'pkg-alpha', version: '1.0.0' }],
+    userPatch: "- insert:\n    - id: g2\n      name: 'cordis:group'\n      config: []\n",
+  })
+  assert.deepEqual(
+    [...collectMountedPackageNames(viaBuiltinName, { hostNodeModules: null, homeDir: null })].sort(),
+    ['pkg-alpha'],
+  )
 })
 
 // --- regressions pinned from the real Desktop profile --------------------

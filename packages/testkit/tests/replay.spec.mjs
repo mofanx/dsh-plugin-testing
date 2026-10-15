@@ -8,8 +8,9 @@
  * still runs on a machine that only has this repo.
  */
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test } from 'node:test'
 
 import { createTestHome, testHomeArgs } from '../src/home.mjs'
@@ -20,6 +21,7 @@ import {
   replayEnv,
   replayPatch,
 } from '../src/replay.mjs'
+import { runLauncher, skipIfUnspawnable } from './spawn-support.mjs'
 
 /** Packaged launcher; override with `DSH_BIN` on another install. */
 const DSH_BIN =
@@ -41,7 +43,31 @@ const v3Fixture = `${HARNESS_FIXTURES}\\rec-pin\\session.v3.jsonl`
 const v0Fixture = `${HARNESS_FIXTURES}\\rec-pin\\session.jsonl`
 
 /**
+ * `skip` value for an environment-dependent case: `false` when it can run, else
+ * a human-readable reason.
+ *
+ * A bare `skip: true` renders as an unexplained `# SKIP` in CI — the one output
+ * nobody can act on, because it does not say *which* variable to set or *which*
+ * path was missing. Every environmental skip therefore names both.
+ *
+ * @param {string} [fixture] fixture file this case additionally needs
+ * @returns {false | string}
+ */
+function missingEnv(fixture) {
+  if (!hasLauncher) return `未找到 DSH launcher（DSH_BIN=${DSH_BIN}）`
+  if (fixture !== undefined && !existsSync(fixture)) {
+    return `fixture 缺失（DSH_FIXTURES=${HARNESS_FIXTURES}，找不到 ${fixture}）`
+  }
+  return false
+}
+
+/**
  * Boot the isolated home and return combined output plus the exit status.
+ *
+ * `error` is returned alongside `status` so callers can tell "the launcher
+ * never started" (environmental) apart from "it started and exited non-zero"
+ * (a statement about the launcher). Collapsing the two made every sandbox
+ * EPERM look like a launcher bug.
  *
  * @param {ReturnType<typeof createTestHome>} home
  * @param {Record<string, string | undefined>} env
@@ -49,19 +75,40 @@ const v0Fixture = `${HARNESS_FIXTURES}\\rec-pin\\session.jsonl`
  * @param {number} [timeout]
  */
 function runDsh(home, env, args, timeout = 40_000) {
-  const result = spawnSync(process.execPath, [DSH_BIN, ...args], {
-    env,
-    encoding: 'utf8',
-    timeout,
-  })
-  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
+  return runLauncher(process.execPath, [DSH_BIN, ...args], { env, encoding: 'utf8', timeout })
 }
 
-/** Create a home that can host the replay plugin. */
+/**
+ * Shared guard for the real-boot cases: skip when the child could not be
+ * started at all, otherwise assert it actually ran.
+ *
+ * @param {import('node:test').TestContext} t
+ * @param {{ status: number | null, error: Error | undefined, output: string }} result
+ */
+function assertLaunched(t, result) {
+  if (skipIfUnspawnable(t, result.error)) return false
+  assert.equal(
+    result.error,
+    undefined,
+    `launcher 未能启动：${/** @type {NodeJS.ErrnoException} */ (result.error)?.code} ${result.error?.message}`,
+  )
+  return true
+}
+
+/**
+ * Create a home that can host the replay plugin.
+ *
+ * The session root is pinned **inside** the throwaway home: `replayPatch`'s
+ * default (`./.sessions`) is resolved against the child process's cwd, so a real
+ * boot started from the repo root would deposit its session log into the working
+ * tree — an isolation leak in a module whose whole purpose is isolation.
+ */
 function replayHome(patchOptions = {}) {
+  const homeDir = mkdtempSync(join(tmpdir(), 'dsh-replay-home-'))
   return createTestHome({
+    root: homeDir,
     packages: ['@deepseek-ai/dsh-llm-replay'],
-    profilePatch: replayPatch(patchOptions),
+    profilePatch: replayPatch({ sessionRoot: join(homeDir, 'sessions'), ...patchOptions }),
   })
 }
 
@@ -129,23 +176,43 @@ test('replayEnv does not mutate the base environment', () => {
   assert.equal(base.DSH_HOME, 'C:/original')
 })
 
+test('replayHome 把 session root 钉在一次性 home 内，不写进工作目录（隔离回归）', () => {
+  // 回归：`replayPatch` 的默认 `./.sessions` 由**子进程 cwd** 解析，因此从仓库根
+  // 启动的真实回合会把会话日志落进工作树 —— 对一个以隔离为卖点的模块来说这是
+  // 泄漏。用例的 home 必须显式钉一个 home 内的绝对路径。
+  const home = replayHome()
+  try {
+    const patch = readFileSync(join(home.profileDir, 'cordis.patch.yml'), 'utf8')
+    assert.match(patch, /- id: session-persistence-jsonl\n {2}config:\n {4}root: '/, 'patch 应设置会话根')
+    const root = /root: '([^']+)'/.exec(patch)?.[1] ?? ''
+    assert.ok(root !== './.sessions', 'session root 不得沿用相对默认值')
+    assert.ok(
+      root.startsWith(home.homeDir),
+      `session root 应位于一次性 home 内：${root} 不在 ${home.homeDir} 下`,
+    )
+  } finally {
+    home.cleanup()
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Real boot: composition
 // ---------------------------------------------------------------------------
 
-test('a linked replay package composes into the profile', { skip: !hasLauncher }, () => {
+test('a linked replay package composes into the profile', { skip: missingEnv() }, (t) => {
   const home = replayHome()
   try {
     // `--dump-config` is composition only: it succeeds even when the plugin
     // would fail to activate, so it proves the link and the patch resolve.
-    const { status, output } = runDsh(home, replayEnv(home.homeDir, {}, process.env), [
+    const result = runDsh(home, replayEnv(home.homeDir, {}, process.env), [
       '--profile',
       home.profileName,
       '--dump-config',
     ])
-    assert.equal(status, 0)
-    assert.match(output, /- id: llm-replay/)
-    assert.match(output, /name: '@deepseek-ai\/dsh-llm-replay'/)
+    if (!assertLaunched(t, result)) return
+    assert.equal(result.status, 0, result.output)
+    assert.match(result.output, /- id: llm-replay/)
+    assert.match(result.output, /name: '@deepseek-ai\/dsh-llm-replay'/)
   } finally {
     home.cleanup()
   }
@@ -155,21 +222,18 @@ test('a linked replay package composes into the profile', { skip: !hasLauncher }
 // Real boot: the keyless lane
 // ---------------------------------------------------------------------------
 
-test('replay failure is the reported fault, not a missing credential', { skip: !hasLauncher }, () => {
+test('replay failure is the reported fault, not a missing credential', { skip: missingEnv() }, (t) => {
   const home = replayHome()
   try {
     // No fixture anywhere. Booting must fail *because replay could not install*
     // — never with MISSING_CREDENTIAL. That contrast is the proof the keyless
     // lane is real: `llm-deepseek` is genuinely off, so no key is ever sought.
-    const { status, output } = runDsh(
-      home,
-      replayEnv(home.homeDir, {}, process.env),
-      testHomeArgs(home, { task: 'say hi' }),
-    )
-    assert.equal(status, 1, output)
-    assert.match(output, /llm-replay: a fixture path is required/)
-    assert.match(output, /no adapter registered for provider/)
-    assert.doesNotMatch(output, /MISSING_CREDENTIAL/)
+    const result = runDsh(home, replayEnv(home.homeDir, {}, process.env), testHomeArgs(home, { task: 'say hi' }))
+    if (!assertLaunched(t, result)) return
+    assert.equal(result.status, 1, result.output)
+    assert.match(result.output, /llm-replay: a fixture path is required/)
+    assert.match(result.output, /no adapter registered for provider/)
+    assert.doesNotMatch(result.output, /MISSING_CREDENTIAL/)
   } finally {
     home.cleanup()
   }
@@ -181,17 +245,18 @@ test('replay failure is the reported fault, not a missing credential', { skip: !
 
 test(
   'a fixture without a `version` field is rejected by the codec',
-  { skip: !hasLauncher || !existsSync(v0Fixture) },
-  () => {
+  { skip: missingEnv(v0Fixture) },
+  (t) => {
     const home = replayHome()
     try {
-      const { output } = runDsh(
+      const result = runDsh(
         home,
         replayEnv(home.homeDir, { fixture: v0Fixture }, process.env),
         testHomeArgs(home, { task: 'say hi' }),
       )
+      if (!assertLaunched(t, result)) return
       // v0 projections omit `version`; the codec needs an explicit integer.
-      assert.match(output, /Session format version must be a non-negative safe integer/)
+      assert.match(result.output, /Session format version must be a non-negative safe integer/)
     } finally {
       home.cleanup()
     }
@@ -200,21 +265,22 @@ test(
 
 test(
   'a fixture with no recorded model calls fails loudly instead of silently',
-  { skip: !hasLauncher || !existsSync(v3Fixture) },
-  () => {
+  { skip: missingEnv(v3Fixture) },
+  (t) => {
     const home = replayHome()
     try {
-      const { output } = runDsh(
+      const result = runDsh(
         home,
         replayEnv(home.homeDir, { fixture: v3Fixture }, process.env),
         testHomeArgs(home, { task: 'say hi' }),
       )
+      if (!assertLaunched(t, result)) return
       // The committed record-suite files are session-snapshot fixtures, not
       // llm-replay scripts: they load, then report zero usable calls. Turning
       // that shortfall into an explicit error is the whole point — a silently
       // truncated replay would be a false green.
-      assert.match(output, /llm-replay: script exhausted/)
-      assert.match(output, /re-record the scenario/)
+      assert.match(result.output, /llm-replay: script exhausted/)
+      assert.match(result.output, /re-record the scenario/)
     } finally {
       home.cleanup()
     }

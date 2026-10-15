@@ -6,6 +6,8 @@
 | 维护 | 测试负责人 |
 | 代码位置 | `packages/testkit/`（测试工具包）+ `packages/conformance/`（静态门禁）（本仓库） |
 | 本文档角色 | 团队交付面唯一入口：只含抽象后的通用方法与工具用法 |
+| 非技术读者 | 转给产品 / 项目经理看 [`overview.md`](overview.md)（一页看懂，无需技术背景） |
+| CI 真实宿主 | 集成用例的环境变量与版本影响见 [`ci-real-host.md`](ci-real-host.md) |
 
 ---
 
@@ -35,7 +37,8 @@
 进程内 `ctx.plugin(...)` 套件**不充分**（DSH doctrine 明文）—— 产品可见插件必须有真实组合测试。用 testkit 起一个一次性 home：
 
 ```js
-import { createTestHome, testHomeArgs, testHomeEnv } from 'packages/testkit'
+import { createTestHome, testHomeArgs, testHomeEnv } from '@your-scope/dsh-plugin-testkit'
+// 只用一半时用子路径：'@your-scope/dsh-plugin-testkit/home' 或 '…/replay'
 
 const home = createTestHome({
   bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless', '<你的 bundle 包>'],
@@ -66,11 +69,15 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 | 清单 / exports（C0xx 前段） | `dsh.bundle.patch` 存在性、`exports` 完整性、客户端声明 | 缺 `./package.json` 导出 |
 | 组合装载（`DSH-C050…C056`） | 把宿主包放进 `dependencies` 的遮蔽模式 | 宿主**核心包**被遮蔽（error）；工具包重复安装（warn） |
 | 版本 / peer（`DSH-C057`、`DSH-C060…C066`） | peer 范围 vs 宿主实际版本、豁免有效性、cordis 系 | `C060` belowMin / `C064` 不满足且无豁免 |
+| 门禁自身配置（`DSH-C070`、`DSH-C071`） | 配置声明的路径是否存在、目标模式是否真的匹配到东西 | 宿主路径写错（`C070`）/ 目标模式落空（`C071`） |
 
 - **判级取决于"是否被挂载"**：宿主只对它将要 import 的**行**做版本预检。不满足的 peer 在被挂载为 profile 行的包上是 error（宿主会真的禁用它），在从不挂载的支撑包上只是 warn。
 - **退出码**：`0` 通过；`1` 有 error（`--strict` 下 warn 也算）；`2` 用法错误 / 无检查目标。
+- **"没查"绝不等于"通过"**：`C070`/`C071` 专门防这一类虚假绿灯 —— 宿主 / `DSH_HOME` / 豁免文件**显式配了却不存在**时报 `C070`（否则依赖它的版本检查会整体静默跳过），目标模式**一个都没匹配到**时报 `C071`。全部目标落空时 CLI 以 **exit 2** 退出并逐个打印未匹配的模式。路径改名 / 盘符变化 / 配置复制粘贴出错都会立刻变红。
 - error/warn 分级是有意的：`DSH-C030`（缺 `engines.dsh`）这类不阻断运行的问题不卡 PR，但发布前必须清零。
 - **移除 API 数据表**（`packages/conformance/removed-apis.json`）：宿主随版本移除的 API（当前：`./invariant` 子路径）**不硬编码进规则**。`DSH-C044` 读表匹配，并按宿主版本分级——未指定宿主 → error；宿主早于 `removedIn` → warn；达/过 → error。**未来新增同类移除，只在表里追加一条数据，零代码改动**（表正确性由测试用 `api-baseline.json` 交叉验证兜底）。
+
+- **patch 里用 `group: true` 分组是合法写法**：载体（boot 解析为内建 `cordis:group`）**本来就没有模块名**，门禁不会因此报 `C053`（这类误报已修并有用例钉住）。被它包住的**子行**仍按普通行核对 —— 子行引用了没装的包照样报 `C053`；`group` 标了 `disabled: true` 时，其子行不再被视为已挂载。
 
 **peer 范围怎么写（实测教训，见第六节第 1 条）**：范围必须覆盖你要支持的每一条宿主线；运行时用 `includePrerelease: true`，单个范围 `>=0.2.0-rc.2 <0.3.0` 即可覆盖 `0.2.0-rc.x` 与 `0.2.1-alpha.x` 两条线，并集写法也可但非必需。
 
@@ -116,7 +123,7 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 
 - **C1 清单契约**：`dsh.bundle.patch` 必填且指向文件存在；`exports` 必含 `.` / `./package.json`（声明 bundle 时另需 `./cordis.patch.yml`）；有客户端半边时 `dsh.client.platform` **必填**，`inject` **可选且为信息性字段**（非 Cordis 服务注入）。
 - **C2 依赖形态**：**禁止**把 `@deepseek-ai/dsh-*` / `@deepseek-ai/cordis` 放入普通 `dependencies`（版本遮蔽故障模式，工具调用直接死）；必须 `peerDependencies`。
-- **C3 peer 范围策略**：明确写法约定 + DSH 升级时由谁负责放宽。
+- **C3 peer 范围策略**：**禁止跨主版本大范围** —— 含**单侧无界**（`>=1.0.0`、`<2.0.0` 都算，因为开放侧隐含宣称了未来**全部** major）；要覆盖多条宿主线就写**逐 major 显式并集**（`>=1.0.0 <2.0.0 || >=2.0.0 <3.0.0`）。**该规则不对内部实验插件放宽**（§7 已定）：临时需要走既有的 `compatibility.json` 豁免通道，用"放宽规则"解决临时问题会让豁免机制形同虚设。DSH 升级时由测试负责人负责放宽并更新本节。
 - **C4 诊断契约**：**禁止**依赖 invariants（已移除）。插件自建诊断通道，由测试期探针夹具承载断言，诊断默认关闭、不加模型输入。
 - **C5 静态错误码**：CI 报告与豁免说明统一引用 `DSH-C0xx` 错误码。
 

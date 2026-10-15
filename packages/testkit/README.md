@@ -2,7 +2,7 @@
 
 DSH 插件团队的测试基建。**不是 DSH 插件** —— 它不注册任何 `ctx` 服务，只提供测试用的宿主环境与驱动。
 
-> ⚠️ **落仓位置待定（计划 D-2）**：当前暂存于工作区，可运行但未入版本管理。等仓库确定后整体搬迁。
+> ⚠️ **发布状态**：包名为占位 scope `@your-scope/dsh-plugin-testkit`，且 `package.json` 仍为 `private: true` —— 仅供本仓 `link:`/`file:` 引用，尚未发布到任何 registry。正式对外发布前需替换 scope、去掉 `private`，并**确定许可证**：本仓当前没有 `LICENSE` 文件，著作权归属未定，因此两个包的 `package.json` 已**移除** `license` 字段（不虚标 `MIT`）。注意 `private: true` 只能阻止误发布，**不构成任何授权**。
 
 ## 为什么需要它
 
@@ -19,7 +19,7 @@ DSH 插件团队的测试基建。**不是 DSH 插件** —— 它不注册任�
 ## 用法
 
 ```js
-import { createTestHome, testHomeArgs, testHomeEnv } from '@your-scope/dsh-plugin-testkit/home'
+import { createTestHome, testHomeArgs, testHomeEnv } from '@your-scope/dsh-plugin-testkit'
 
 const home = createTestHome({ profilePatch: '- insert:\n    - id: probe\n      name: "pkg-probe"\n' })
 try {
@@ -32,6 +32,8 @@ try {
   home.cleanup()
 }
 ```
+
+包根导出是 `home` 与 `replay` 两半的并集。只用到其中一半时，用更精确的子路径导入：`…/home`、`…/replay`。
 
 ## 两条通道：keyless 与 with-key
 
@@ -70,4 +72,6 @@ try {
 npm test        # node --test "tests/**/*.spec.mjs"
 ```
 
-其中最后一条是**决定性用例**：真的启动打包的 launcher（`--dump-config`，不需模型凭据），断言裸 home 能 boot 出组合。它跑约 260ms。找不到 launcher 时该用例自动跳过；可用 `DSH_BIN` 指定其他安装。
+其中 5 条是**真实启动用例**（本包 `home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条）：真的启动打包的 launcher（`--dump-config`，不需模型凭据），断言裸 home 能 boot 出组合。找不到 launcher 时自动跳过；可用 `DSH_BIN` 指定其他安装。
+
+若进程**根本起不来**（沙箱 `EPERM`、`DSH_BIN` 指向已删除的路径等），用例会以 `skip` + 具体 errno 报告，而不是伪装成"launcher 退出码异常"的失败 —— 二者指向完全不同的排查方向。超时**不算**环境问题，仍按失败处理（挂死的 launcher 正是这些用例要抓的）。
