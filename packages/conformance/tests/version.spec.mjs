@@ -15,7 +15,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { checkPeerContract } from '../src/peer.mjs'
-import { diagnoseRange, satisfies } from '../src/semver.mjs'
+import {
+  admittedOnlyByRuntime,
+  diagnoseRange,
+  prereleaseTuple,
+  satisfies,
+  satisfiesInstallTime,
+} from '../src/semver.mjs'
 import { VERSION_RULE_CODES } from '../src/rules.mjs'
 
 const tempDirs = []
@@ -76,6 +82,32 @@ test('预发布准入规则：与运行时一致（includePrerelease: true）', 
   // P1-1 回归：预发布宿主 0.2.1-alpha.2 满足无预发布元组的范围 >=0.2.0 <0.3.0。
   // 这是团队目标线（源码线 0.2.1-alpha.x）上最易误报的形态。
   assert.equal(satisfies('0.2.1-alpha.2', '>=0.2.0 <0.3.0'), true)
+})
+
+test('安装期语义：npm/pnpm 的裸 semver 只接纳同元组预发布（C067 的判据）', () => {
+  // npm 的公开规则：预发布版本只有在比较器集合中存在**带预发布且 [major,minor,patch]
+  // 元组相同**的比较器时才被接纳。运行时不用这条规则，两者因此会分歧 —— C067 正是
+  // 这个分歧集合（includePrerelease 只会放宽，所以这是全部分歧）。
+  assert.equal(satisfies('0.2.1-alpha.4', '>=0.2.0-rc.2 <0.3.0'), true)
+  assert.equal(satisfiesInstallTime('0.2.1-alpha.4', '>=0.2.0-rc.2 <0.3.0'), false)
+
+  // 同元组：0.2.0-rc.2 由 >=0.2.0-rc.2 接纳，两种语义一致
+  assert.equal(satisfiesInstallTime('0.2.0-rc.2', '>=0.2.0-rc.2 <0.3.0'), true)
+
+  assert.equal(admittedOnlyByRuntime('0.2.1-alpha.4', '>=0.2.0-rc.2 <0.3.0'), true)
+  assert.equal(admittedOnlyByRuntime('0.2.0-rc.2', '>=0.2.0-rc.2 <0.3.0'), false)
+  // 非预发布宿主版本不可能落进这一档
+  assert.equal(admittedOnlyByRuntime('0.2.5', '>=0.2.0-rc.2 <0.3.0'), false)
+
+  // 并集写法在两种语义下同时成立 —— 这就是修复方向
+  const union = '>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0'
+  for (const version of ['0.2.0-rc.2', '0.2.1-alpha.2', '0.2.1-alpha.4', '0.2.5']) {
+    assert.equal(satisfies(version, union), true, `${version} 应被运行时语义接纳`)
+    assert.equal(satisfiesInstallTime(version, union), true, `${version} 应被安装期语义接纳`)
+  }
+
+  assert.equal(prereleaseTuple('0.2.1-alpha.4'), '0.2.1')
+  assert.equal(prereleaseTuple('not-a-version'), null)
 })
 
 test('diagnoseRange 区分 belowMin 与 aboveMax', () => {
@@ -297,6 +329,63 @@ test('peer 完全满足时零发现', () => {
     peerDependencies: { '@deepseek-ai/cordis': '~4.0.4', '@deepseek-ai/dsh-llm': '0.2.0-rc.2' },
   })
   assert.deepEqual(codesOf(dir, { hostVersions: HOST }), [])
+})
+
+// --- C067 — the install-time (plain semver) dimension ---------------------
+
+test('C067：只被运行时预检接受的单范围 → warn（安装期会判 peer 不满足）', () => {
+  // 真实形态：这条范围在桌面线（0.2.0-rc.2）上完全正确，但源码线的预发布
+  // 0.2.1-alpha.4 只被 includePrerelease 接纳，npm/pnpm 的裸 semver 会拒绝它。
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-single',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=0.2.0-rc.2 <0.3.0' },
+  })
+  const findings = checkPeerContract(dir, { hostVersions: { '@deepseek-ai/dsh-llm': '0.2.1-alpha.4' } })
+  const finding = findings.find((item) => item.code === 'DSH-C067')
+  exercised.add('DSH-C067')
+  assert.ok(finding, `期望 DSH-C067，实际得到 [${findings.map((f) => f.code).join(', ')}]`)
+  assert.equal(finding.severity, 'warn')
+  // 运行时诊断是通过的，所以不应同时报 C060/C064 —— 这两个是"运行时真的不要它"
+  assert.ok(!findings.some((item) => item.code === 'DSH-C060' || item.code === 'DSH-C064'))
+  assert.match(finding.message, /0\.2\.1/)
+})
+
+test('C067 不误报：并集范围在两种语义下都成立（修复后的写法）', () => {
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-union',
+    version: '1.0.0',
+    peerDependencies: {
+      '@deepseek-ai/dsh-llm': '>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0',
+    },
+  })
+  for (const host of ['0.2.0-rc.2', '0.2.1-alpha.2', '0.2.1-alpha.4', '0.2.5']) {
+    assert.deepEqual(
+      codesOf(dir, { hostVersions: { '@deepseek-ai/dsh-llm': host } }),
+      [],
+      `宿主 ${host} 上不应有任何发现`,
+    )
+  }
+})
+
+test('C067 不误报：非预发布宿主版本与"真的不满足"都不算这一档', () => {
+  const stable = makePackage({
+    name: '@scope/dsh-plugin-stable-host',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=0.2.0 <0.3.0' },
+  })
+  // 0.2.5 不是预发布版本：满足，且两种语义一致 → 不报
+  assert.deepEqual(codesOf(stable, { hostVersions: { '@deepseek-ai/dsh-llm': '0.2.5' } }), [])
+
+  // 运行时自己就不接受 → 属于 C060（宿主太旧），不是 C067
+  const old = makePackage({
+    name: '@scope/dsh-plugin-too-old',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=0.3.0' },
+  })
+  const codes = codesOf(old, { hostVersions: { '@deepseek-ai/dsh-llm': '0.2.1-alpha.4' } })
+  assert.ok(codes.includes('DSH-C060'), `期望 DSH-C060，实际 [${codes.join(', ')}]`)
+  assert.ok(!codes.includes('DSH-C067'))
 })
 
 // --- completeness --------------------------------------------------------

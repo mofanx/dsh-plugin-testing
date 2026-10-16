@@ -317,6 +317,13 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 | `DSH-C064` | 存在不满足的 peer，但 `compatibility.json` 无对应豁免 | error |
 | `DSH-C065` | 存在豁免条目，但对应插件版本已变更（豁免失效） | warn |
 | `DSH-C066` | **支撑包**（未被任何 profile 挂载为行）的 peer 不满足宿主 —— 尚未阻断，但一旦被挂载为行即会被禁用 | warn |
+| `DSH-C067` | peer 范围**只被运行时预检接受**：宿主是预发布版本，`includePrerelease` 放行它，但安装期（npm/pnpm）的裸 semver 只接纳带同一 `[major,minor,patch]` 元组预发布的比较器，因而判为 peer 不满足。运行时**不会**因此拒绝该插件，改法是把范围写成并集 | warn |
+
+> **`DSH-C060` 与 `DSH-C067` 是两个不同的维度，不要合并**：`C060` 是"运行时**真的不要**这个插件"（预检会禁用该行，作者必须改范围或走豁免）；`C067` 是"运行时放行，但**安装期**会拒绝"（插件仍能加载，但 `npm install` / `pnpm install` 会看到 peer 不满足，源码线开发流程尤其容易踩）。两者的**成因不同**（元组未覆盖 vs 界外）、**改法不同**（写并集 vs 抬高/降低界）、**严重度也不同**（warn vs error），合并会让修复指引失真。
+>
+> 判据是**可执行的**：`satisfies(v, r)`（`includePrerelease: true`，对齐运行时）为真而 `satisfiesInstallTime(v, r)`（裸 semver，对齐安装器）为假。因为 `includePrerelease` 只会放宽准入，这一个方向就是全部分歧集合 —— 不存在反向情形。
+>
+> **当前建模边界**：检查器对 cordis 系 peer（`C057`）的比较锚定在**宿主机里实际装到的那个版本**上，安装器已经成功解析过它，因此那条线不会出现同样的"运行时放行／安装期拒绝"分裂；`C067` 只对 DSH 运行时系 peer 求值。
 
 ### 门禁自身配置
 
@@ -324,7 +331,7 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 
 | 错误码 | 含义 | 级别 |
 |---|---|---|
-| `DSH-C070` | 配置**显式声明**的路径不存在（`hostNodeModules` / `dshHome` / `appDir` / `exemptionsPath`）。区分"未配置"与"配置了但不存在"：后者会静默关掉依赖它的检查（宿主机版本缺失 → `C060`/`C061`/`C064`/`C066` 全部跳过） | error |
+| `DSH-C070` | 配置**显式声明**的路径不存在（`hostNodeModules` / `dshHome` / `appDir` / `exemptionsPath`）。区分"未配置"与"配置了但不存在"：后者会静默关掉依赖它的检查（宿主机版本缺失 → `C060`/`C061`/`C064`/`C066`/`C067` 全部跳过） | error |
 | `DSH-C071` | 配置的 `packages` / `profiles` 模式未匹配到任何目标。展开为空集时 `every()` 恒真，门禁会以 exit 0"通过"却一个包都没查 | error |
 
 > **零目标另有退出码**：当 `packages` + `profiles` 展开后目标数为 **0** 时，CLI 按"用法错误 / 无检查目标"以 **exit 2** 退出并逐个打印未匹配的模式（与 `DSH-C071` 的 error 分级互补：部分落空 → exit 1 且列出缺口；全部落空 → exit 2）。
@@ -346,6 +353,10 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
   **落地**：`packages/testkit/src/activate.mjs`（原语）+ `activate-cli.mjs`（`dsh-plugin-activate`，供 CI 调用），隔离 home + 链接被测包 + 真实启动，断言无 `disabling profile plugin` / 无 `did not activate` / 无 pending / 无 `plugin tree failed to load`，并以终止于 `MISSING_CREDENTIAL` 作为"启动已越过预检"的证据（无需模型凭据与外部服务）。
   **三条实测结论**：① **`--dump-config` 不能替代真实启动** —— 实测一个不兼容行会原样出现在 dump 里且**没有任何 `disabled` 标记与诊断**，预检只在真实 boot 时执行；② 探针**自证能检出**（`fixtures/incompatible-plugin` 刻意不可满足的 peer → 检出并失败；`--expect-disabled` 反过来证明它并非"永远失败"）；③ 对 EDA 插件 A/B：修复前 `a2819a3` **2 行被禁用**（`optional-schematic`、`optional-tool-schematic`，原因即 peer `>=0.2.1-alpha.2` 与宿主 `0.2.0-rc.2` 不兼容），修复后 `9547271` **0 行被禁用**且启动越过预检 —— 插件修复在运行时真实生效，而不只是静态门禁变绿。
   **顺带修正的一处判据错误**：行 id 由插入它的补丁作者决定（bundle 可把 `@scope/dsh-plugin-a` 挂成 `optional-a`），因此按包名匹配的 `expectActive` **必须**同时解析禁用原因里的包名，否则会把自己要盯的那条禁用误判为"非关注行"。
+- [x] **安装期 semver 维度是否建模（2026-10-16 暴露）—— 已定：新建独立规则码 `DSH-C067`（warn），不并入 `C060`。**
+  暴露方式：把门禁接进真实插件仓库的 CI 时，需要**同时**对"桌面线 `0.2.0-rc.2`"与"源码线 `0.2.1-alpha.4`"两条宿主线判定。两条线跑下来门禁全绿，但复盘发现：**修复前的单范围 `>=0.2.0-rc.2 <0.3.0` 在源码线上运行时放行、安装期会被拒绝**，而当时门禁对这种形态**无能为力**（它只按 `includePrerelease: true` 求值，与运行时一致，于是判定"满足"）。
+  **为何不合并进 `C060`**：`C060` 的语义是"运行时**真的不要**这个插件"（预检禁用该行），改法是抬高/降低界或走豁免；`C067` 的语义是"运行时放行、**安装器**拒绝"，改法是写成并集。成因、改法、严重度（error vs warn）三者皆不同，合并会让修复指引失真 —— 与"错误码要能让作者直接照着改"的原则冲突。
+  **落地**：`semver.mjs` 导出 `satisfiesInstallTime`（裸 semver，对齐安装器）/ `admittedOnlyByRuntime` / `prereleaseTuple`；`peer.mjs` 在运行时诊断**通过**的分支上求值；消息里给出宿主未覆盖的具体元组与并集写法。回归用例见 `version.spec.mjs`（含正对照、负对照、并集不误报三类）。
 - [ ] 豁免新增的审批流程由谁负责
 - [x] 双线维护：**已通过 `removed-apis.json` 数据表 + 阈值分级落地**——单线声明（`removedIn`）+ 阈值自适应双线（宿主早于 → warn，达/过 → error），不维护两套契约
 - [x] `DSH-C044` 参数化：**已落地为数据驱动**（`removed-apis.json`），不再按目标线无条件 error
@@ -357,6 +368,7 @@ profile 的 `compatibility.json` 把**精确的 `包名@版本`** 映射到**精
 
 | 日期 | 版本 | 变更 | 作者 |
 |---|---|---|---|
+| 2026-10-16 | v1.5-draft | **新增 `DSH-C067`：把 peer 的"安装期维度"正式建模进来（warn）**。此前门禁只建模运行时预检那一维（`includePrerelease: true`），会**给一条安装期被 npm/pnpm 拒绝的范围开绿灯** —— 而这正是本仓库在真实插件上踩过的缺陷（单范围 `>=0.2.0-rc.2 <0.3.0` 在桌面线正确，在源码线 `0.2.1-alpha.4` 上运行时放行、安装期拒绝）。新码判据为 `satisfies(v,r) && !satisfiesInstallTime(v,r)`；`includePrerelease` 只放宽准入，故该方向即全部分歧集合。**刻意不并入 `C060`**：成因（元组未覆盖 vs 界外）、改法（写并集 vs 移动界）、严重度（warn vs error）三者皆不同。同时把探针的 `did not activate` 由"只报数量"改为**可归因到具体行**（宿主在聚合行后逐行打印 `<rowId> (<packageName>): <detail>`）—— CI 首次落地时正是被这条无归因的失败卡住 | 测试负责人 |
 | 2026-10-15 | v1.4-draft | **运行时激活探针落地（T16）**：`testkit` 新增 `probeActivation()` 与 `dsh-plugin-activate` CLI，补回丢失的"无豁免即被运行时放行"验证能力。关键实测：`--dump-config` **不跑**兼容性预检（不兼容行原样出现在 dump 且无 `disabled`），故探针必须真实 boot；以 `MISSING_CREDENTIAL` 作为启动越过预检的证据，无需凭据。自证机制：`fixtures/incompatible-plugin` 与 `fixtures/sample-plugin` **只差一个 peer 范围**，构成受控实验；`--expect-disabled` 证明探针不是"永远失败"。EDA 插件 A/B：修复前 2 行被禁用、修复后 0 行。**§7 该项已闭环** | 测试负责人 |
 | 2026-10-15 | v1.3-draft | **`group: true` 载体语义定案**：载体不是模块（boot 解析为内建 `cordis:group`），已从"可导入行"中排除 —— 修掉任何合法 group 声明都触发**阻断级** `DSH-C053` 的误报，并阻止载体污染 T15 的挂载包集合；载体的 `disabled` 仍向子行传播。**§7 决策**：「禁止跨主版本大范围」**不对内部实验插件放宽**（单侧无界同样算跨主版本；临时需要走 `compatibility.json` 豁免通道）。**发布面**：两个包移除 `license: MIT`（无 LICENSE 文件，著作权归属未定，不虚标许可） | 测试负责人 |
 | 2026-10-15 | v1.2-draft | **新增 §6.4 门禁自身配置错误码**：`DSH-C070`（配置显式声明的路径不存在）/ `DSH-C071`（目标模式未匹配到任何目标），均 error；目标数为 0 时 CLI 以 exit 2 退出。**`C062` 判定口径收紧**：改用 semver 比较器解析，单侧无界的范围也算跨主版本（旧正则只认 `>=x.y.z` 三段形态，`>=1.0.0`、`>=1 <3`、连字符区间都会漏判）。**`C042` 误报修复**：`dsh.bundle.patch` 不写 `./` 前缀属合法写法，不再误报 | 测试负责人 |

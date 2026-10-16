@@ -61,6 +61,7 @@ export const RULES = {
   'DSH-C064': { severity: 'error', title: '存在不满足的 peer 但无 compatibility.json 豁免', task: 'T12' },
   'DSH-C065': { severity: 'warn', title: '存在豁免条目但对应插件版本已变更（豁免失效）', task: 'T12' },
   'DSH-C066': { severity: 'warn', title: '支撑包（非 profile 行）的 peer 不满足宿主（尚未阻断）', task: 'T15' },
+  'DSH-C067': { severity: 'warn', title: 'peer 范围只被运行时预检接受，会被安装期裸 semver 拒绝（预发布元组未覆盖）', task: 'T12' },
 
   // --- gate configuration (T13) -----------------------------------------
   // A gate that checks nothing must never look like a gate that passed. These

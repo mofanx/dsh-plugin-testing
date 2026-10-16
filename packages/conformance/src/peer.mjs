@@ -23,7 +23,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { severityOf } from './rules.mjs'
-import { diagnoseRange, spansUnverifiedMajors } from './semver.mjs'
+import { admittedOnlyByRuntime, diagnoseRange, prereleaseTuple, spansUnverifiedMajors } from './semver.mjs'
 
 /** The runtime preflight's exact dsh peer name and its scoped prefix. */
 const DSH_RUNTIME_PEER_NAME = '@deepseek-ai/dsh'
@@ -204,6 +204,34 @@ export function checkPeerContract(packageDir, options = {}) {
   for (const [dependency, range] of Object.entries(peers)) {
     if (!isDshRuntimePeer(dependency)) continue
     if (runtimeVersion === undefined) continue
+
+    // --- C067 — the *other* semver dimension ------------------------------
+    // This is the only finding that exists precisely when the runtime diagnosis
+    // PASSES, so it must be checked before the satisfied-continue below.
+    //
+    // The runtime preflights with `includePrerelease: true` (dsh-app-boot's
+    // `evaluatePluginCompatibility`), while npm/pnpm resolve peerDependencies
+    // with plain semver, where a prerelease version is admitted only by a
+    // comparator carrying a prerelease of the *same* [major,minor,patch] tuple.
+    // A range can therefore be perfectly fine at boot and still be rejected by
+    // every installer — which is what the source line of a plugin sees.
+    //
+    // Warn, not error: nothing the runtime does will refuse this plugin, and the
+    // fix is a range rewrite rather than a defect in behaviour.
+    if (admittedOnlyByRuntime(runtimeVersion, range)) {
+      const tuple = prereleaseTuple(runtimeVersion)
+      findings.push(
+        finding(
+          'DSH-C067',
+          `${name} 的 peer ${dependency} ${range} 只被运行时预检接受：宿主 ${runtimeVersion} 是预发布版本，` +
+            `而安装期（npm/pnpm）的裸 semver 只接纳带同一 [major,minor,patch] 元组预发布的比较器` +
+            `${tuple === null ? '' : `，当前范围没有任何比较器覆盖 ${tuple}`}。` +
+            `运行时不会因此拒绝该插件，但安装期会判为 peer 不满足 —— 改成并集` +
+            `（例：">=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0"）可同时满足两种语义`,
+        ),
+      )
+    }
+
     const diagnosis = diagnoseRange(runtimeVersion, range)
     if (diagnosis.satisfied) continue
     unsatisfied.push(dependency)

@@ -92,7 +92,7 @@ dsh-plugin-activate \
 |---|---|---|
 | 清单 / exports（C0xx 前段） | `dsh.bundle.patch` 存在性、`exports` 完整性、客户端声明 | 缺 `./package.json` 导出 |
 | 组合装载（`DSH-C050…C056`） | 把宿主包放进 `dependencies` 的遮蔽模式 | 宿主**核心包**被遮蔽（error）；工具包重复安装（warn） |
-| 版本 / peer（`DSH-C057`、`DSH-C060…C066`） | peer 范围 vs 宿主实际版本、豁免有效性、cordis 系 | `C060` belowMin / `C064` 不满足且无豁免 |
+| 版本 / peer（`DSH-C057`、`DSH-C060…C067`） | peer 范围 vs 宿主实际版本、豁免有效性、cordis 系、**安装期 semver 维度** | `C060` belowMin / `C064` 不满足且无豁免 / `C067` 只有运行时接受 |
 | 门禁自身配置（`DSH-C070`、`DSH-C071`） | 配置声明的路径是否存在、目标模式是否真的匹配到东西 | 宿主路径写错（`C070`）/ 目标模式落空（`C071`） |
 
 - **判级取决于"是否被挂载"**：宿主只对它将要 import 的**行**做版本预检。不满足的 peer 在被挂载为 profile 行的包上是 error（宿主会真的禁用它），在从不挂载的支撑包上只是 warn。

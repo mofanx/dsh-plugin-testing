@@ -130,6 +130,7 @@ skipped 6 / fail 0        → CI 保持绿色
 | 规则 | 受版本影响的方式 |
 |---|---|
 | `DSH-C060` / `C061` / `C064` / `C066` | 按宿主实际版本判 peer 是否满足，并区分 `belowMin`（宿主太旧）/ `aboveMax`（宿主太新） |
+| `DSH-C067` | 宿主是**预发布**版本时才可能命中：范围只被运行时的 `includePrerelease` 接受，会被安装期裸 semver 拒绝。因此**同一条 peer 范围在两条宿主线上的判定可能不同** —— 这正是需要多线矩阵的原因 |
 | `DSH-C044`（已移除 API） | 按 `removed-apis.json` 的 `removedIn` 阈值**分级**：宿主版本未知 → 按 **error**（保守）；宿主 **早于** `removedIn` → **warn**（现在还能用，迁移后失效）；宿主 **达到/超过** → **error** |
 | `DSH-C063` | 比对插件 `engines.dsh` 与 peer 范围是否自相矛盾（与宿主版本无关，但同属版本族） |
 | 预发布准入 | 所有版本比较统一用 `includePrerelease: true`（与运行时一致），因此 `0.2.0-rc.2`、`0.2.1-alpha.x` 都按预发布正确处理 |

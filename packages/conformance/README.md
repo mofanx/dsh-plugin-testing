@@ -18,7 +18,7 @@ node src/cli.mjs <packageDir...> [--json] [--strict]
 
 检查：`name`/`version`、`dsh.bundle.patch`（类型 / 是否存在 / 是否被 `exports` 覆盖）、`dsh.manifestVersion`、`dsh.client`（`platform` 必填、`inject` 类型）、`dsh.profile.bundles`、`engines.dsh`（存在性与 SemVer 语法）、`exports` 的 `.` / `./package.json` / `./client`，以及**已移除的 `./invariant`**。
 
-### 版本与 peer 契约（规则 `DSH-C057`、`DSH-C060…C066`）
+### 版本与 peer 契约（规则 `DSH-C057`、`DSH-C060…C067`）
 
 ```bash
 node src/cli-version.mjs <packageDir...> \
@@ -26,7 +26,9 @@ node src/cli-version.mjs <packageDir...> \
   --exemptions "$env:DSH_HOME/profiles/desktop/compatibility.json"
 ```
 
-检查：peer 范围是否满足**宿主实际版本**（区分 `belowMin` / `aboveMax`）、peer 是否跨主版本、`engines.dsh` 与 peer 是否一致、不满足时**是否有 `compatibility.json` 豁免**、以及豁免条目是否**因插件版本变更而失效**。
+检查：peer 范围是否满足**宿主实际版本**（区分 `belowMin` / `aboveMax`）、peer 是否跨主版本、`engines.dsh` 与 peer 是否一致、不满足时**是否有 `compatibility.json` 豁免**、豁免条目是否**因插件版本变更而失效**、以及范围是否**只被运行时接受而会被安装期拒绝**（`DSH-C067`）。
+
+> **`DSH-C060` 与 `DSH-C067` 是两个维度**：`C060` = 运行时**真的不要**这个插件（预检会 `deny(row)`，error）；`C067` = 运行时放行、但**安装期**（npm/pnpm 的裸 semver）判 peer 不满足（warn）。宿主是预发布版本时最容易踩：运行时用 `includePrerelease: true`（见 [`../../docs/contract-v1.md`](../../docs/contract-v1.md) §6），而安装器只接纳带**同一 `[major,minor,patch]` 元组预发布**的比较器。改法是把范围写成并集，例如 `>=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.2 <0.3.0`。
 
 ### 单一门禁命令 —— CI 入口
 

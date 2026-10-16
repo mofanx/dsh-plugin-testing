@@ -195,10 +195,24 @@ export function rowId(name) {
  */
 
 /**
+ * @typedef {object} InactiveRow
+ * @property {string} rowId the loader row id the runtime named
+ * @property {string} packageName the package behind that row
+ * @property {string} detail the runtime's own first line of explanation
+ */
+
+/**
  * Parse the runtime's startup diagnostics out of combined output.
  *
+ * Attribution matters as much as detection here: the aggregate line only says
+ * *how many* plugins stayed inactive, and on a CI runner the difference between
+ * "my plugin failed to load" and "a host-only plugin is platform-bound" is the
+ * difference between a real bug and an environment fact. The runtime does print
+ * the per-row detail (`<rowId> (<packageName>): <detail>` right after the
+ * aggregate line), so it is parsed rather than thrown away.
+ *
  * @param {string} output
- * @returns {{ denied: DeniedRow[], didNotActivate: boolean, pending: boolean, loadFailure: boolean }}
+ * @returns {{ denied: DeniedRow[], inactive: InactiveRow[], didNotActivate: boolean, pending: boolean, loadFailure: boolean }}
  */
 export function parseStartupDiagnostics(output) {
   /** @type {DeniedRow[]} */
@@ -211,8 +225,23 @@ export function parseStartupDiagnostics(output) {
       packageName: reason.match(/Plugin (\S+?)@\S+ is incompatible/)?.[1],
     })
   }
+
+  // `<rowId> (<packageName>): <detail>` — only trusted *after* the aggregate
+  // "did not activate" header, so an unrelated line of the same shape elsewhere
+  // in the output cannot be mistaken for a startup failure.
+  /** @type {InactiveRow[]} */
+  const inactive = []
+  const headerIndex = output.search(/did not activate|startup failed/)
+  if (headerIndex !== -1) {
+    const tail = output.slice(headerIndex)
+    for (const match of tail.matchAll(/^\s*(\S+) \(([^()\s]+)\): (.*)$/gm)) {
+      inactive.push({ rowId: match[1], packageName: match[2], detail: match[3].trim() })
+    }
+  }
+
   return {
     denied,
+    inactive,
     didNotActivate: /did not activate/.test(output),
     pending: /Plugins waiting for services/.test(output),
     loadFailure: /plugin tree failed to load/.test(output),
@@ -228,6 +257,8 @@ export function parseStartupDiagnostics(output) {
  * @property {DeniedRow[]} denied rows the compatibility preflight disabled
  * @property {DeniedRow[]} unrelatedDenials denials outside `expectActive` (reported, not fatal)
  * @property {boolean} didNotActivate a plugin failed to come up
+ * @property {InactiveRow[]} inactive which rows stayed inactive, with reasons
+ *   (empty when the runtime did not print them, or when nothing stayed inactive)
  * @property {boolean} pending a row is waiting for an unmet service
  * @property {boolean} loadFailure the loader threw
  * @property {string | undefined} terminal the terminal error code, when one was reported
@@ -358,7 +389,14 @@ export function probeActivation(options = {}) {
     // news when nothing was denied — i.e. a plugin failed to start for some
     // reason the compatibility preflight does not explain.
     if (diagnostics.didNotActivate && diagnostics.denied.length === 0) {
-      problems.push('有插件 did not activate（启动失败），且没有任何行因兼容性被禁用 —— 需查启动日志')
+      // Name them. "1 plugin did not activate" is not actionable on a runner:
+      // the reader cannot tell the plugin under test from a host-only row that
+      // is simply not built for this platform.
+      const who =
+        diagnostics.inactive.length === 0
+          ? ''
+          : ` —— ${diagnostics.inactive.map((entry) => `${entry.packageName}（row ${entry.rowId}）`).join('、')}`
+      problems.push(`有插件 did not activate（启动失败），且没有任何行因兼容性被禁用${who}`)
     }
     if (diagnostics.pending) problems.push('有插件在等待未满足的服务（pending）')
     if (diagnostics.loadFailure) problems.push('plugin tree failed to load')
@@ -375,6 +413,7 @@ export function probeActivation(options = {}) {
     denied: diagnostics.denied,
     unrelatedDenials,
     didNotActivate: diagnostics.didNotActivate,
+    inactive: diagnostics.inactive,
     pending: diagnostics.pending,
     loadFailure: diagnostics.loadFailure,
     terminal,

@@ -123,6 +123,28 @@ test('parseStartupDiagnostics：识别三类非兼容性启动故障', () => {
   assert.equal(parseStartupDiagnostics('dsh: plugin tree failed to load\n').loadFailure, true)
 })
 
+test('parseStartupDiagnostics：did not activate 要能归因到具体哪一行（而只报数量）', () => {
+  // 宿主的真实格式（inactiveDiagnostic）：`<rowId> (<packageName>): <detail>`
+  const real =
+    'dsh: warning: 2 plugins did not activate\n' +
+    "pwsh-local (@deepseek-ai/dsh-pwsh-local): Cannot find module './build/x.node'\n" +
+    'optional-schematic (@deepseek-ai/dsh-plugin-eda-sch): boom\n'
+  const parsed = parseStartupDiagnostics(real)
+  assert.equal(parsed.didNotActivate, true)
+  assert.deepEqual(
+    parsed.inactive.map((entry) => entry.packageName),
+    ['@deepseek-ai/dsh-pwsh-local', '@deepseek-ai/dsh-plugin-eda-sch'],
+  )
+  assert.equal(parsed.inactive[0].rowId, 'pwsh-local')
+  assert.match(parsed.inactive[0].detail, /Cannot find module/)
+})
+
+test('parseStartupDiagnostics：聚合行之前的同形状文本不算未激活（区间守卫）', () => {
+  const parsed = parseStartupDiagnostics('noise (@scope/pkg): 不是启动故障\ndsh: MISSING_CREDENTIAL\n')
+  assert.deepEqual(parsed.inactive, [])
+  assert.equal(parsed.didNotActivate, false)
+})
+
 test('resolveLauncher：DSH_BIN 优先，否则用打包默认路径', () => {
   assert.equal(resolveLauncher({ DSH_BIN: 'D:/custom/bin.js' }), 'D:/custom/bin.js')
   assert.equal(resolveLauncher({}), DEFAULT_LAUNCHER)

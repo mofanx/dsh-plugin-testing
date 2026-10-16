@@ -5,6 +5,9 @@
  *  - `isValidSemverRange` — is `engines.dsh` syntactically a range? (DSH-C031)
  *  - `satisfies` / `diagnoseRange` — does a concrete host version meet a peer
  *    range? (DSH-C060 / C061)
+ *  - `admittedOnlyByRuntime` — the *other* dimension: does the range pass the
+ *    prerelease-inclusive evaluation but fail plain npm/pnpm resolution?
+ *    (DSH-C067)
  *
  * Faithfulness note: the DSH runtime (`@deepseek-ai/dsh-app-boot`
  * `evaluatePluginCompatibility`) evaluates peer ranges with the official
@@ -87,6 +90,63 @@ export function diagnoseRange(version, range) {
   if (semver.ltr(version, range, { includePrerelease: true })) return { satisfied: false, direction: 'belowMin' }
   if (semver.gtr(version, range, { includePrerelease: true })) return { satisfied: false, direction: 'aboveMax' }
   return { satisfied: false, direction: null }
+}
+
+/**
+ * Does `version` satisfy `range` under **plain npm/pnpm install-time**
+ * semantics — i.e. without `includePrerelease`?
+ *
+ * npm's published rule: a prerelease version only satisfies a comparator set if
+ * at least one comparator carries a prerelease **with the same
+ * `[major, minor, patch]` tuple**. The runtime preflight deliberately does not
+ * apply that rule (`includePrerelease: true`), so the two evaluators disagree on
+ * exactly the versions this predicate is about. (DSH-C067)
+ *
+ * @param {unknown} version
+ * @param {unknown} range
+ * @returns {boolean}
+ */
+export function satisfiesInstallTime(version, range) {
+  if (typeof version !== 'string' || typeof range !== 'string') return false
+  if (semver.valid(version) === null) return false
+  // An invalid range throws in `satisfies`; C031 already reports that shape.
+  if (semver.validRange(range) === null) return false
+  return semver.satisfies(version, range)
+}
+
+/**
+ * The precise defect DSH-C067 describes: `range` is admitted by the
+ * prerelease-inclusive evaluation (runtime preflight, and this checker's own
+ * `satisfies`) but rejected by plain npm/pnpm resolution.
+ *
+ * `includePrerelease` only ever relaxes admission, so this is the whole
+ * divergence set — no version is admitted by one call and "outside" by the
+ * other.
+ *
+ * @param {unknown} version
+ * @param {unknown} range
+ * @returns {boolean}
+ */
+export function admittedOnlyByRuntime(version, range) {
+  if (typeof version !== 'string') return false
+  if (parseVersion(version)?.prerelease.length === 0) return false
+  return satisfies(version, range) && !satisfiesInstallTime(version, range)
+}
+
+/**
+ * The `[major, minor, patch]` tuple of a concrete version, as a string
+ * (`0.2.1-alpha.4` → `0.2.1`). `null` when the version cannot be parsed.
+ *
+ * Used to name the tuple a range would have to cover: that is exactly the
+ * information an author needs to fix a DSH-C067 finding.
+ *
+ * @param {unknown} version
+ * @returns {string | null}
+ */
+export function prereleaseTuple(version) {
+  const parsed = parseVersion(version)
+  if (parsed === null) return null
+  return `${parsed.major}.${parsed.minor}.${parsed.patch}`
 }
 
 /**

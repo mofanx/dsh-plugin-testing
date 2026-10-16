@@ -111,6 +111,15 @@ function report(result, context) {
   lines.push(
     `启动诊断    : didNotActivate=${result.didNotActivate} pending=${result.pending} loadFailure=${result.loadFailure}`,
   )
+  // Attribution, not just the count: on a CI runner "1 plugin did not activate"
+  // is unactionable until you know whether it was the plugin under test or a
+  // host row that this platform simply cannot build.
+  if (result.inactive.length > 0) {
+    lines.push('未激活的行  :')
+    for (const entry of result.inactive) {
+      lines.push(`  ✗ ${entry.packageName}（row ${entry.rowId}）：${entry.detail}`)
+    }
+  }
   lines.push('')
   if (result.ok) {
     lines.push('结论：通过 —— 关注的行均未被运行时禁用，且启动已越过兼容性预检')
@@ -186,6 +195,7 @@ function main() {
           denied: result.denied,
           unrelatedDenials: result.unrelatedDenials,
           didNotActivate: result.didNotActivate,
+          inactive: result.inactive,
           pending: result.pending,
           loadFailure: result.loadFailure,
           problems: result.problems,
