@@ -15,7 +15,7 @@
 
 | 交付物 | 形态 | 一句话 |
 |---|---|---|
-| `packages/testkit` | 测试工具包（**非插件**） | 隔离测试 home、keyless 模型回放、组合测试引导 —— 在独立进程里用真实启动器跑你的插件 |
+| `packages/testkit` | 测试工具包（**非插件**） | 隔离测试 home、keyless 模型回放、**运行时激活探针**、组合测试引导 —— 在独立进程里用真实启动器跑你的插件 |
 | `packages/conformance` | 静态门禁 CLI | 清单 / 组合装载 / 版本契约三类静态检查（`DSH-C0xx` 错误码），PR 前一条命令 |
 | `api-baseline.json` | 数据 | 宿主安装树的真实导出面快照（包 / 子路径 / 符号），供 API 用量核对 |
 | 本指南 | 文档 | 方法论 + 契约 + 实测沉淀的陷阱清单 |
@@ -51,7 +51,9 @@ const home = createTestHome({
 
 实测确立的两项关键事实：**① 隔离 home 不需要 node_modules**（bundle 由安装解析，隔离成本 ≈ 0）；**② 隔离 home 必然没有凭据**（跑到模型调用处报 `MISSING_CREDENTIAL` 是隔离在起作用，不是缺陷）。组合测试若依赖模型，用第四节的回放车道实现 keyless。
 
-### 第 3 步 · CI 门禁（一条命令）
+### 第 3 步 · CI 门禁（两条车道：静态 + 运行时）
+
+**车道 A —— 静态门禁**（读文件，快，不需要宿主启动）：
 
 ```bash
 node packages/conformance/src/run-all.mjs --config 你的配置.json            # error 阻断
@@ -59,6 +61,28 @@ node packages/conformance/src/run-all.mjs --config 你的配置.json --strict   
 ```
 
 配置从 `conformance.config.example.json` 复制，指向你的插件仓库与宿主安装目录。
+
+**车道 B —— 运行时激活探针**（真实启动一次，回答"宿主到底有没有禁用这一行"）：
+
+```bash
+dsh-plugin-activate \
+  --packages "<你的插件仓库>/packages/*" \
+  --bundle <你的 bundle 包名> \
+  --expect-active <你的插件包名>
+```
+
+两条车道**不可互相替代**，原因是一条实测事实：**`--dump-config` 不跑兼容性预检** —— 一个 peer 不兼容的行会原样出现在 dump 里，既没有 `disabled: true` 也没有任何诊断。也就是说，只看配置组合的检查会**恰好对这条车道要抓的用例报告成功**。
+
+| | 车道 A 静态门禁 | 车道 B 运行时探针 |
+|---|---|---|
+| 依据 | manifest / lockfile / profile 文件 | 真实 boot 的 stderr 诊断 |
+| 能发现 | peer 范围写错、缺 `engines.dsh`、`dependencies` 混入核心包、豁免失效 | **运行时是否真的禁用了这一行**、启动失败、等待服务、loader 抛错 |
+| 不能发现 | 运行时是否真的放行 | 范围写法是否会在**安装期**被 npm/pnpm 拒绝（探针不跑安装） |
+| 成本 | 毫秒级、无依赖 | 一次启动（秒级），**不需要凭据与外部服务** |
+
+探针**不需要模型凭据**：预检在第一次模型调用之前执行，所以隔离 home 会稳定终止于 `MISSING_CREDENTIAL` —— 走到这一步本身就是"启动已越过预检"的证据。探针据此主动清理凭据环境变量，避免一次"通过"偷偷依赖真实模型调用。
+
+**让探针自证**：`--expect-disabled <行 id 或包名>` 断言某行**必须**被禁用，用来证明探针真的挂上了被测包、而不是在空跑。仓库内 `fixtures/sample-plugin` 与 `fixtures/incompatible-plugin` **只差一个 peer 范围**，构成受控实验。
 
 ---
 

@@ -1,0 +1,14 @@
+{
+  "name": "@sample/dsh-plugin-incompatible",
+  "version": "1.0.0",
+  "description": "运行时探针自证夹具：与 sample-plugin 只差一个 peer 范围（刻意不可满足），用于证明探针能检出被运行时禁用的行。不参与门禁自检。",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-llm": ">=9.0.0"
+  }
+}

@@ -33,7 +33,49 @@ try {
 }
 ```
 
-包根导出是 `home` 与 `replay` 两半的并集。只用到其中一半时，用更精确的子路径导入：`…/home`、`…/replay`。
+包根导出是 `home`、`replay`、`activate` 三半的并集。只用到其中一半时，用更精确的子路径导入：`…/home`、`…/replay`、`…/activate`。
+
+## 运行时激活探针（T16）：回答"宿主到底有没有禁用这一行"
+
+静态门禁（`dsh-plugin-conformance`）只读文件、从不启动 DSH —— 这正是它快且不需要凭据的原因，也正是它**答不了**那个决定插件能否工作的问题：**运行时有没有把这个行禁用掉？**
+
+这个判定发生在 `dsh-app-boot` 的兼容性预检里，而且**只在真实启动时执行**：
+
+```
+dsh: disabling profile plugin row "optional-schematic": Plugin @scope/dsh-plugin-a@0.1.0-alpha.1
+is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-llm":">=0.2.1-alpha.2 <0.3.0"}.
+```
+
+> ⚠️ **`--dump-config` 不能替代真实启动**（实测）：一个不兼容的行会**原样出现在 dump 里，既没有 `disabled: true` 也没有任何诊断**。用 dump 冒充这条车道，恰好会对本车道要抓的用例报告成功。
+
+```js
+import { probeActivation } from '@your-scope/dsh-plugin-testkit'
+
+const result = probeActivation({
+  links: { '@scope/dsh-plugin-a': 'D:/projects/my-plugins/packages/a' },
+  rows: ['@scope/dsh-plugin-a'],          // 作为 loader 行挂载
+  // extraBundles: ['@scope/dsh-plugin-my-bundle'],  // 或让 bundle 自己的 patch 去挂
+  expectActive: ['@scope/dsh-plugin-a'],  // 只把关注行的禁用判为失败
+})
+// result.ok / result.denied / result.terminal …
+```
+
+CLI（CI 用）：
+
+```sh
+dsh-plugin-activate \
+  --packages "D:/projects/my-plugins/packages/*" \
+  --bundle @scope/dsh-plugin-my-bundle \
+  --expect-active @scope/dsh-plugin-a
+```
+
+退出码与门禁一致：`0` 通过 / `1` 关注行被禁用或启动失败 / `2` 用法错误或**没有匹配到任何包**（空集合绝不能是绿的）。
+
+**为什么不需要凭据、也不需要外部服务**：预检在第一次模型调用**之前**执行，所以隔离 home（没有 `compatibility.json`、没有凭据）会稳定地终止于 `MISSING_CREDENTIAL` —— 而**走到这一步本身就是证据**：行被组合了、没被禁用、进程一直走到了需要模型的地方。探针据此**主动清理**凭据环境变量（`--allow-credentials` 可关闭），以免一次"通过"悄悄依赖了真实模型调用。
+
+**探针如何自证**：仓库内两个夹具 `fixtures/sample-plugin` 与 `fixtures/incompatible-plugin` **只差一个 peer 范围**，构成受控实验 —— 判定差异只可能来自兼容性预检。`--expect-disabled` 进一步证明它并非"永远失败"。三类非兼容性启动故障（`did not activate`、等待服务的 pending、`plugin tree failed to load`）同样被捕获。
+
+**已知边界**：行 id 由插入它的补丁作者决定（bundle 可把 `@scope/dsh-plugin-a` 挂成 `optional-a`），所以 `expectActive` 既比对行 id、也比对禁用原因里的包名 —— 只比对其中之一会把自己要盯的禁用误判为"非关注行"。
 
 ## 两条通道：keyless 与 with-key
 
@@ -72,6 +114,6 @@ try {
 npm test        # node --test "tests/**/*.spec.mjs"
 ```
 
-其中 5 条是**真实启动用例**（本包 `home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条）：真的启动打包的 launcher（`--dump-config`，不需模型凭据），断言裸 home 能 boot 出组合。找不到 launcher 时自动跳过；可用 `DSH_BIN` 指定其他安装。
+本包共 39 条用例（`home` 12 + `replay` 13 + `activate` 14）。其中 **9 条是真实启动用例**（`home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条 + `activate.spec.mjs` 4 条）：真的启动打包的 launcher，断言"世界"而不是插件的自述。找不到 launcher 时自动跳过；可用 `DSH_BIN` 指定其他安装。
 
 若进程**根本起不来**（沙箱 `EPERM`、`DSH_BIN` 指向已删除的路径等），用例会以 `skip` + 具体 errno 报告，而不是伪装成"launcher 退出码异常"的失败 —— 二者指向完全不同的排查方向。超时**不算**环境问题，仍按失败处理（挂死的 launcher 正是这些用例要抓的）。

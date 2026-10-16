@@ -101,7 +101,7 @@ node packages/conformance/src/run-all.mjs --config eda.conformance.json
 
 ## 六、诚实说明：本轮**没有**覆盖的部分
 
-- **真实启动（testkit 那一层）未验证**：需要 DSH 能 boot 且插件能装载，前置条件正是 `DSH-C060` 指出的"当前桌面版装不上"。也就是说，**静态层先拦住了，真实启动层根本走不到** —— 顺序是对的。
+- **真实启动（testkit 那一层）未验证**：需要 DSH 能 boot 且插件能装载，前置条件正是 `DSH-C060` 指出的"当前桌面版装不上"。也就是说，**静态层先拦住了，真实启动层根本走不到** —— 顺序是对的。**（已于第十一节补齐：探针重建后实测确认"修复前 2 行被禁用 / 修复后 0 行"，这条缺口现已闭环。）**
 - **`DSH-C070`/`DSH-C071`（门禁自身配置）本轮未触发**：它们只在配置写错时报警，本轮配置是正确的。这两条已在单元用例与"路径写错"探针中单独验证过。
 - **未在 CI runner 上跑**：本轮是在本机跑的。CI 化的要求见 [`ci-real-host.md`](ci-real-host.md)。
 
@@ -233,7 +233,66 @@ C060 降级正例、C060 未覆盖保持 error 的反例（三种不匹配形态
 
 ### 4. 同时暴露的测试项目缺口
 
-变更清单里"无豁免运行时探针 5/5 全过"的复现脚本 `eda-probe-no-exemption.mjs` **随 monorepo 合并丢失**，其复跑路径已不存在 —— 该结论目前**无法从本仓库复现**。静态门禁替代不了它（门禁只读文件、不启动 DSH）。已列为下一步首要事项。
+变更清单里"无豁免运行时探针 5/5 全过"的复现脚本 `eda-probe-no-exemption.mjs` **随 monorepo 合并丢失**，其复跑路径已不存在 —— 该结论一度**无法从本仓库复现**。静态门禁替代不了它（门禁只读文件、不启动 DSH）。**已列为下一步首要事项，并已在第十一节重建完成。**
+
+## 十一、运行时探针重建（T16，同日闭环）
+
+第九节证明了插件修复让**静态门禁**变绿；但"宿主到底有没有禁用这一行"只有真实启动能回答。本节把那条丢失的车道补回来，并用它给 v0.6 的插件修复补上**运行时活证据**。
+
+### 1. 落地形态
+
+| 交付物 | 作用 |
+|---|---|
+| `packages/testkit/src/activate.mjs` | `probeActivation()` 原语：隔离 home + 链接被测包 + 真实启动 + 解析启动诊断 |
+| `packages/testkit/src/activate-cli.mjs` | `dsh-plugin-activate` CLI，供 CI 调用；退出码与门禁一致（0/1/2） |
+| `fixtures/incompatible-plugin/` | 新增反面夹具，与 `fixtures/sample-plugin` **只差一个 peer 范围** |
+| `packages/testkit/tests/activate.spec.mjs` | 14 条用例（10 条纯逻辑 + 4 条真实启动），含探针自证 |
+
+### 2. 三条实测结论
+
+**① `--dump-config` 不能替代真实启动** —— 这是设计这条车道时最关键的一条事实。实测：把 `@probe/plugin`（peer `>=9.0.0`）挂进一次性 home，`--dump-config` **exit 0、stderr 为空**，该行**原样出现在 dump 里，既没有 `disabled: true` 也没有任何诊断**。原因是兼容性预检只在真实 boot 的 entry 准备阶段执行，dump 只是静态组合渲染。**用 dump 冒充这条车道，会恰好对本车道要抓的用例报告成功。**
+
+**② 探针自证能检出（不是"永远失败"）** —— 受控实验：两个夹具的 `lib/index.js` 逐字相同，唯一变量是 peer 范围。
+
+| 夹具 | peer 范围 | 探针判定 |
+|---|---|---|
+| `fixtures/sample-plugin` | `>=0.2.0-rc.2 <0.3.0` | `ok = true`，0 条禁用 |
+| `fixtures/incompatible-plugin` | `>=9.0.0` | `ok = false`，1 条禁用，包名解析正确 |
+
+`--expect-disabled` 再把反面翻回来：断言"这个行**必须**被禁用"时探针**通过** —— 证明它既能检出、又不是无条件失败。
+
+**③ EDA 插件 A/B：v0.6 的修复在运行时真实生效**
+
+| | 修复前 `a2819a3` | 修复后 `9547271` |
+|---|---|---|
+| 探针判定 | **失败** | **通过** |
+| 被运行时禁用的行 | **2 条**：`optional-schematic`、`optional-tool-schematic` | **0 条** |
+| 禁用原因 | peer `>=0.2.1-alpha.2` 与宿主 `0.2.0-rc.2` 不兼容 | — |
+| `did not activate` | true | false |
+| 终止状态 | `MISSING_CREDENTIAL`（已越过预检） | `MISSING_CREDENTIAL`（已越过预检） |
+
+复跑命令（不需要 EDA 客户端、不需要模型凭据）：
+
+```bash
+dsh-plugin-activate \
+  --packages "D:/projects/nodejs/deepseek-eda-plugins/packages/*" \
+  --bundle @deepseek-ai/dsh-plugin-eda-bundle \
+  --expect-active @deepseek-ai/dsh-plugin-eda-sch
+```
+
+### 3. 不需要凭据与外部服务，且不允许偷偷依赖
+
+预检在第一次模型调用**之前**执行，所以隔离 home（无 `compatibility.json`、无凭据）稳定终止于 `MISSING_CREDENTIAL` —— **走到这一步本身就是"启动已越过预检"的证据**。探针据此**主动清理**凭据环境变量（`--allow-credentials` 可关闭），以免一次"通过"悄悄依赖了真实模型调用。
+
+### 4. 本轮又抓到的一个自身缺陷（双向改进再次生效）
+
+首次实现里 `expectActive` 只比对**行 id**。实测立刻暴露问题：EDA bundle 把 `@deepseek-ai/dsh-plugin-eda-sch` 挂成了行 id `optional-schematic`，于是"我盯的包被禁用了"被误判成**非关注行**，探针反而放行。修正为**同时解析禁用原因里的包名**（`Plugin <包名>@<版本> is incompatible`）后判定恢复正确。同类问题还让 `expectDisabled` 无法匹配（运行时标签是行 id，调用方给的是包名），由新增用例抓出并一并修正。
+
+**这印证了本项目的价值主张**：门禁/探针自身也会出错，而"能自证能检出"的受控实验是用例，不是声明。
+
+### 5. 用例数
+
+149 → **163**，全部通过、0 skip（本机有打包宿主）。其中 testkit 39 条（`home` 12 + `replay` 13 + `activate` 14），含 9 条真实启动用例。
 
 ## 十、一句话总结
 

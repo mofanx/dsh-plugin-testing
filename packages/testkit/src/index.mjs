@@ -17,3 +17,4 @@
 
 export * from './home.mjs'
 export * from './replay.mjs'
+export * from './activate.mjs'

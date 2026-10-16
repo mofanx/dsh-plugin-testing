@@ -8,7 +8,11 @@
     ".": "./src/index.mjs",
     "./home": "./src/home.mjs",
     "./replay": "./src/replay.mjs",
+    "./activate": "./src/activate.mjs",
     "./package.json": "./package.json"
+  },
+  "bin": {
+    "dsh-plugin-activate": "./src/activate-cli.mjs"
   },
   "files": [
     "src"
