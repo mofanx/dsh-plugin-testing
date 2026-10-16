@@ -114,6 +114,10 @@ function report(result, context) {
   // Attribution, not just the count: on a CI runner "1 plugin did not activate"
   // is unactionable until you know whether it was the plugin under test or a
   // host row that this platform simply cannot build.
+  if (result.unbuilt.length > 0) {
+    lines.push('未构建的包  :')
+    for (const entry of result.unbuilt) lines.push(`  ! ${entry}`)
+  }
   if (result.inactive.length > 0) {
     lines.push('未激活的行  :')
     for (const entry of result.inactive) {
@@ -196,6 +200,7 @@ function main() {
           unrelatedDenials: result.unrelatedDenials,
           didNotActivate: result.didNotActivate,
           inactive: result.inactive,
+          unbuilt: result.unbuilt,
           pending: result.pending,
           loadFailure: result.loadFailure,
           problems: result.problems,

@@ -75,6 +75,22 @@ dsh-plugin-activate \
 
 **探针如何自证**：仓库内两个夹具 `fixtures/sample-plugin` 与 `fixtures/incompatible-plugin` **只差一个 peer 范围**，构成受控实验 —— 判定差异只可能来自兼容性预检。`--expect-disabled` 进一步证明它并非"永远失败"。三类非兼容性启动故障（`did not activate`、等待服务的 pending、`plugin tree failed to load`）同样被捕获。
 
+**失败要能归因**：宿主的聚合行只说*有几个*插件没起来。在 CI 上，"是我的插件没起来"与"是宿主自身某行在这个平台起不来"是完全不同的结论，所以探针会解析宿主紧接着打印的逐行诊断（`<rowId> (<packageName>): <detail>`）并在报告中列出：
+
+```
+未激活的行  :
+  ✗ @scope/dsh-plugin-a（row optional-a）：failed to import: Error [ERR_MODULE_NOT_FOUND] …
+```
+
+**入口未构建会被单独指出**（接进真实 CI 时踩到的坑）：插件的入口通常是**构建产物**（`tsc -b` 产出的 `lib/index.js`），不在仓库里。直接在未构建的检出上跑探针，每一行都会 `failed to import` 并抛 `ERR_MODULE_NOT_FOUND` —— 那句话描述的是症状，原因是"没人跑构建"。探针在启动前就会检查每个链接包**声明**的入口文件是否存在，并明确报告：
+
+```
+未构建的包  :
+  ! @scope/dsh-plugin-a（./lib/index.js）
+结论：失败
+  - 以下包声明的入口文件不存在：… —— 探针验证的是**交付物**，入口通常是构建产物，请先构建（如 pnpm run build）
+```
+
 **已知边界**：行 id 由插入它的补丁作者决定（bundle 可把 `@scope/dsh-plugin-a` 挂成 `optional-a`），所以 `expectActive` 既比对行 id、也比对禁用原因里的包名 —— 只比对其中之一会把自己要盯的禁用误判为"非关注行"。
 
 ## 两条通道：keyless 与 with-key

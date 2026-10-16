@@ -122,7 +122,50 @@ export function expandPackagePattern(pattern) {
  *   the host does not validate — treating it as a plugin marker would publish a
  *   predicate that is simply false for real plugins (all five EDA packages lack
  *   it and all five are real rows).
+ * @property {string | null} entry absolute path of the declared entry, `null` when none
+ * @property {boolean} entryExists whether that path is on disk (a plugin's entry
+ *   is usually a build output, so this is what separates "broken" from "not built")
  */
+
+/**
+ * @typedef {object} DeclaredEntry
+ * @property {string} declared the path exactly as the manifest wrote it
+ * @property {string} path the resolved absolute path
+ * @property {boolean} exists whether that file is actually on disk
+ */
+
+/**
+ * Resolve the entry file a package manifest *promises*, and whether it is
+ * actually there.
+ *
+ * This exists because a DSH plugin's entry is normally a **build output**
+ * (`lib/index.js` from `tsc -b`), so probing a fresh checkout — rather than a
+ * built tree — produces `failed to import` with a raw `ERR_MODULE_NOT_FOUND`.
+ * That message describes the symptom; the cause is "nobody ran the build", and
+ * the probe can say so before booting.
+ *
+ * `null` when the manifest declares no entry at all (e.g. a bundle-only
+ * package), which is a legitimate shape rather than a defect.
+ *
+ * @param {string} packageDir
+ * @returns {DeclaredEntry | null}
+ */
+export function inspectEntry(packageDir) {
+  /** @type {any} */
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
+  } catch {
+    return null
+  }
+  const dot = manifest?.exports !== null && typeof manifest?.exports === 'object' ? manifest.exports?.['.'] : undefined
+  const fromExports =
+    typeof dot === 'string' ? dot : typeof dot === 'object' && dot !== null ? (dot.import ?? dot.default ?? dot.require) : undefined
+  const declared = typeof fromExports === 'string' ? fromExports : typeof manifest?.main === 'string' ? manifest.main : undefined
+  if (declared === undefined) return null
+  const path = resolve(packageDir, declared)
+  return { declared, path, exists: existsSync(path) }
+}
 
 /**
  * Discover packages behind a list of patterns, reading each one's real name.
@@ -155,15 +198,14 @@ export function discoverPackages(patterns) {
       const absolute = resolve(dir)
       if (seen.has(manifest.name)) continue
       seen.add(manifest.name)
+      const entry = inspectEntry(absolute)
       packages.push({
         name: manifest.name,
         dir: absolute,
         version: typeof manifest.version === 'string' ? manifest.version : '',
-        hasEntry:
-          (manifest.exports !== null &&
-            typeof manifest.exports === 'object' &&
-            manifest.exports['.'] !== undefined) ||
-          typeof manifest.main === 'string',
+        hasEntry: entry !== null,
+        entry: entry === null ? null : entry.path,
+        entryExists: entry === null ? false : entry.exists,
       })
     }
   }
@@ -259,6 +301,8 @@ export function parseStartupDiagnostics(output) {
  * @property {boolean} didNotActivate a plugin failed to come up
  * @property {InactiveRow[]} inactive which rows stayed inactive, with reasons
  *   (empty when the runtime did not print them, or when nothing stayed inactive)
+ * @property {string[]} unbuilt packages whose declared entry file is missing
+ *   (normally "not built yet" rather than "broken")
  * @property {boolean} pending a row is waiting for an unmet service
  * @property {boolean} loadFailure the loader threw
  * @property {string | undefined} terminal the terminal error code, when one was reported
@@ -342,6 +386,24 @@ export function probeActivation(options = {}) {
   const problems = []
   /** @type {DeniedRow[]} */
   const unrelatedDenials = []
+
+  // Pre-flight: a plugin's entry is usually a build output, so probing an
+  // unbuilt checkout makes every row fail with a raw `ERR_MODULE_NOT_FOUND`.
+  // That names the symptom; this names the cause, before the boot cost is paid.
+  // Reported regardless of the spawn outcome because it is a fact about the
+  // tree under test, not about the host.
+  /** @type {string[]} */
+  const unbuilt = []
+  for (const [name, dir] of Object.entries(links)) {
+    const entry = inspectEntry(dir)
+    if (entry !== null && !entry.exists) unbuilt.push(`${name}（${entry.declared}）`)
+  }
+  if (unbuilt.length > 0) {
+    problems.push(
+      `以下包声明的入口文件不存在：${unbuilt.join('、')} —— 探针验证的是**交付物**，入口通常是构建产物，请先构建（如 pnpm run build）`,
+    )
+  }
+
   if (!spawned) {
     problems.push(`launcher 未能启动（${spawnError?.code ?? 'unknown'}）：${spawnError?.message ?? ''}`)
   } else {
@@ -414,6 +476,7 @@ export function probeActivation(options = {}) {
     unrelatedDenials,
     didNotActivate: diagnostics.didNotActivate,
     inactive: diagnostics.inactive,
+    unbuilt,
     pending: diagnostics.pending,
     loadFailure: diagnostics.loadFailure,
     terminal,

@@ -246,7 +246,7 @@ C060 降级正例、C060 未覆盖保持 error 的反例（三种不匹配形态
 | `packages/testkit/src/activate.mjs` | `probeActivation()` 原语：隔离 home + 链接被测包 + 真实启动 + 解析启动诊断 |
 | `packages/testkit/src/activate-cli.mjs` | `dsh-plugin-activate` CLI，供 CI 调用；退出码与门禁一致（0/1/2） |
 | `fixtures/incompatible-plugin/` | 新增反面夹具，与 `fixtures/sample-plugin` **只差一个 peer 范围** |
-| `packages/testkit/tests/activate.spec.mjs` | 14 条用例（10 条纯逻辑 + 4 条真实启动），含探针自证 |
+| `packages/testkit/tests/activate.spec.mjs` | 18 条用例（12 条纯逻辑 + 6 条真实启动），含探针自证与"未构建"归因 |
 
 ### 2. 三条实测结论
 
@@ -353,7 +353,26 @@ npm error Invalid name: ".dsh-host"
 
 ### 4. 用例数
 
-163 → **169**，全部通过、0 skip。新增 6 条：`C067` 三类（正对照 / 并集不误报 / 非预发布与"真的不满足"不算这一档）、`satisfiesInstallTime` 与 `admittedOnlyByRuntime` 的语义钉死、以及探针归因与区间守卫各 1 条。规则码 35 → **36**。
+163 → **171**，全部通过、0 skip。新增 8 条：`C067` 三类（正对照 / 并集不误报 / 非预发布与"真的不满足"不算这一档）、`satisfiesInstallTime` 与 `admittedOnlyByRuntime` 的语义钉死、探针归因与区间守卫各 1 条、`inspectEntry` 的入口解析、以及"入口未构建"的真实启动用例。规则码 35 → **36**。
+
+### 5. 第三个问题：未构建的检出（CI 再次暴露）
+
+换用带归因的探针重跑 CI，答案立刻明确：
+
+```
+未激活的行  :
+  ✗ @deepseek-ai/dsh-plugin-eda-sch（row optional-schematic）：failed to import
+    Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+    '/tmp/dsh-test-home-…/node_modules/@deepseek-ai/dsh-plugin-eda-sch/lib/index.js'
+```
+
+**既不是插件的问题，也不是 Linux 的问题** —— `lib/index.js` 是 `tsc -b` 的**构建产物**，不在仓库里；CI 从不构建，而本机验证时用的恰好是**已构建**的开发检出。也就是说：**探针验证的是交付物，所以它必须在构建之后运行**，这一点此前的 CI 配方与文档都没写。
+
+两处改进（都已落地）：
+1. **CI 侧**：在跑车道 B 之前 `pnpm install --frozen-lockfile && pnpm run build`。
+2. **探针侧**：在启动前检查每个链接包**声明**的入口文件是否存在（`inspectEntry`），并输出独立的「未构建的包」一节 —— 让"没构建"与"坏了"分开，而不是让调用方去读一句 `ERR_MODULE_NOT_FOUND`。
+
+本地已按 CI 条件复刻验证（把 5 个包的 `package.json` 复制到临时目录、不带 `lib/`）：未构建 → 5 个包全部被列出、退出码 1；已构建的开发检出 → `MISSING_CREDENTIAL`、退出码 0。
 
 ## 十二、一句话总结
 

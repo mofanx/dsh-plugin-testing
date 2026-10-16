@@ -26,6 +26,7 @@ import {
   DEFAULT_LAUNCHER,
   discoverPackages,
   expandPackagePattern,
+  inspectEntry,
   parseStartupDiagnostics,
   probeActivation,
   resolveLauncher,
@@ -81,6 +82,49 @@ test('discoverPackages：hasEntry 反映可导入入口，与 dsh.manifestVersio
   assert.equal(packages[0].name, '@sample/dsh-plugin-minimal')
   // 夹具没有 dsh.manifestVersion，却是可挂载的真实插件 —— 所以入口判据不能依赖它
   assert.equal(packages[0].hasEntry, true)
+  assert.equal(packages[0].entryExists, true, '夹具的入口文件确实存在')
+})
+
+test('inspectEntry：解析 exports["."] 的各种形态，并区分"声明了但没构建"', () => {
+  const root = mkdtempSync(join(tmpdir(), 'dsh-entry-'))
+  const make = (manifest, files = []) => {
+    const dir = mkdtempSync(join(root, 'pkg-'))
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+    for (const file of files) {
+      mkdirSync(join(dir, dirname(file)), { recursive: true })
+      writeFileSync(join(dir, file), 'export function apply() {}')
+    }
+    return dir
+  }
+  try {
+    // 字符串 exports
+    const stringExports = make({ name: 'a', exports: { '.': './lib/index.js' } }, ['lib/index.js'])
+    assert.deepEqual(inspectEntry(stringExports), {
+      declared: './lib/index.js',
+      path: join(stringExports, 'lib', 'index.js'),
+      exists: true,
+    })
+
+    // 条件 exports：取 import
+    const conditional = make({ name: 'b', exports: { '.': { import: './dist/main.mjs', require: './cjs/main.cjs' } } }, [
+      'dist/main.mjs',
+    ])
+    assert.equal(inspectEntry(conditional)?.declared, './dist/main.mjs')
+    assert.equal(inspectEntry(conditional)?.exists, true)
+
+    // main 回退
+    const mainOnly = make({ name: 'c', main: 'lib/entry.js' }, ['lib/entry.js'])
+    assert.equal(inspectEntry(mainOnly)?.declared, 'lib/entry.js')
+
+    // 声明了但文件不在 —— 这正是"没构建"，探针要把它和"坏了"分开
+    const unbuilt = make({ name: 'd', exports: { '.': './lib/index.js' } })
+    assert.equal(inspectEntry(unbuilt)?.exists, false)
+
+    // 完全没声明入口是合法形态（如纯 bundle 包），不是缺陷
+    assert.equal(inspectEntry(make({ name: 'e' })), null)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })
 
 test('rowId：由包名稳定派生出行 id', () => {
@@ -153,6 +197,37 @@ test('resolveLauncher：DSH_BIN 优先，否则用打包默认路径', () => {
 //#endregion
 
 //#region integration
+
+test(
+  '真实启动：入口未构建时给出"未构建"归因，而不是只报 failed to import',
+  { timeout: 180_000, skip: noLauncher },
+  () => {
+    // 这正是把探针接进真实插件仓库 CI 时踩到的坑：`lib/` 是构建产物、不在仓库里，
+    // 于是每一行都 failed to import 并抛 ERR_MODULE_NOT_FOUND —— 那句话描述的是
+    // 症状（找不到文件），而原因是"没人跑构建"。探针应当自己说出来。
+    const dir = mkdtempSync(join(tmpdir(), 'dsh-unbuilt-'))
+    try {
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify({
+          name: '@probe/unbuilt',
+          version: '1.0.0',
+          type: 'module',
+          main: 'lib/index.js',
+          exports: { '.': './lib/index.js' },
+        }),
+      )
+      const result = probeActivation({ links: { '@probe/unbuilt': dir }, rows: ['@probe/unbuilt'] })
+      assert.deepEqual(result.unbuilt, ['@probe/unbuilt（./lib/index.js）'])
+      assert.equal(result.ok, false)
+      assert.match(result.problems.join('；'), /入口文件不存在/)
+      // 与 peer 兼容性无关：没有任何行因兼容性被禁用
+      assert.deepEqual(result.denied, [])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  },
+)
 
 test(
   '真实启动：兼容夹具的行不被禁用（T16 正例）',
