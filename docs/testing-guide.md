@@ -176,9 +176,36 @@ dsh-plugin-activate \
 | `templates/plugin-host-matrix-template.md` | **插件 × 宿主兼容性矩阵**：回答"这次宿主升级谁会碎、要先合什么" | 随宿主版本节奏定期 |
 
 > **矩阵的"该测哪几格"不再靠挑**：先用 `dsh-plugin-host-matrix` 算出**声明覆盖集**（不装宿主、
-> 不联网、几秒），再只对其中要宣称"已验证"的格子做实测。三层（声明覆盖 / 实测通过 / 未验证）
-> 必须分开呈现 —— 把推导出的覆盖集当成实测结果填进矩阵，是本套基建最要防的假绿。
+> 不联网、几秒），再只对其中要宣称"已验证"的格子做实测。四层（声明覆盖 / 接口可用 / 实测通过 /
+> 未验证）必须分开呈现 —— 把推导出的覆盖集当成实测结果填进矩阵，是本套基建最要防的假绿。
 > 详见模板开头的说明。
 
 两者均由测试负责人填写交付；团队侧零操作。开发侧唯一的主动项是把门禁挂进 CI（一条命令，
 见 §二第 3 步）；宿主版本矩阵可以再加一条（不需要宿主，见 `packages/conformance/README.md`）。
+
+## 八、维护"已记录的宿主 API 面"
+
+`dsh-plugin-host-matrix --surfaces` 用的宿主 API 面是**随仓库提交的静态产物**，放在
+`fixtures/host-surfaces/`。检查时**不联网、不装宿主**，所以它适合每次 PR 都跑。代价是上游
+发新版后这份记录会过时 —— 过时只会让新版本落在"未知"（**不会给出错误的绿灯**），但要让格子
+有结论就得补。
+
+```bash
+# 1. 装一台宿主 —— 版本必须写精确值
+mkdir -p /tmp/host && cd /tmp/host
+echo '{"name":"dsh-probe-host","private":true,"version":"0.0.0","dependencies":{"@deepseek-ai/dsh":"0.2.1-alpha.4"}}' > package.json
+npm install --no-audit --no-fund
+
+# 2. 采集（产物自带 hostVersion，文件名只是给人看的）
+node packages/conformance/src/cli-api.mjs \
+  --host /tmp/host/node_modules \
+  --baseline fixtures/host-surfaces/surface-0.2.1-alpha.4.json --write
+```
+
+> **依赖版本必须写精确值，不能写 `^`。** `^0.2.1-alpha.2` **不是**"alpha.2"：按预发布元组
+> 规则它会解析到同一个 `[0,2,1]` 元组里**最新的**预发布版本（实测装出来是 `alpha.4`）。
+> 这一点在生成现有文件时真的踩到过。
+
+当前记录恰好覆盖 EDA 插件声明区间的全部 5 个版本（`0.2.0-rc.2` 与 `0.2.1-alpha.1…alpha.4`），
+所以那个仓库的每个覆盖格子都有结论。候选清单里另有 28 个版本**没有** API 面，它们一律算
+**未知** —— 报告会如实打印，**未知 ≠ 通过**。详见 `fixtures/host-surfaces/README.md`。
