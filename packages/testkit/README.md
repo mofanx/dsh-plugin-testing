@@ -2,7 +2,9 @@
 
 DSH 插件团队的测试基建。**不是 DSH 插件** —— 它不注册任何 `ctx` 服务，只提供测试用的宿主环境与驱动。
 
-> ⚠️ **发布状态**：包名为占位 scope `@your-scope/dsh-plugin-testkit`，且 `package.json` 仍为 `private: true` —— 仅供本仓 `link:`/`file:` 引用，尚未发布到任何 registry。正式对外发布前需替换 scope、去掉 `private`，并**确定许可证**：本仓当前没有 `LICENSE` 文件，著作权归属未定，因此两个包的 `package.json` 已**移除** `license` 字段（不虚标 `MIT`）。注意 `private: true` 只能阻止误发布，**不构成任何授权**。
+> ⚠️ **发布状态**：`@deepseek-ai/dsh-plugin-testkit`，`private: true`，**仅供本仓 `link:`/`file:` 引用，不发布到任何 registry**。
+>
+> `private: true` + `license: "UNLICENSED"` 是**成对**的，两者都是 npm 文档对"私有、不打算授予任何权利"给出的标准写法：前者**从机制上**阻止误发布（`npm publish` 直接失败），后者把"没授权"写明确。注意 `private: true` 只阻止误发布，**本身不构成任何授权** —— 那正是 `UNLICENSED` 要说的事。留空与"忘了填"无法区分，而 `MIT` 是虚标。scope 在这里**只是标识符，不是 registry 声明**；若内网 registry 用别的 scope，改名是两条命令，见 [`docs/intranet-porting.md`](../../docs/intranet-porting.md)。
 
 ## 为什么需要它
 
@@ -19,7 +21,7 @@ DSH 插件团队的测试基建。**不是 DSH 插件** —— 它不注册任�
 ## 用法
 
 ```js
-import { createTestHome, testHomeArgs, testHomeEnv } from '@your-scope/dsh-plugin-testkit'
+import { createTestHome, testHomeArgs, testHomeEnv } from '@deepseek-ai/dsh-plugin-testkit'
 
 const home = createTestHome({ profilePatch: '- insert:\n    - id: probe\n      name: "pkg-probe"\n' })
 try {
@@ -49,7 +51,7 @@ is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-llm":">
 > ⚠️ **`--dump-config` 不能替代真实启动**（实测）：一个不兼容的行会**原样出现在 dump 里，既没有 `disabled: true` 也没有任何诊断**。用 dump 冒充这条车道，恰好会对本车道要抓的用例报告成功。
 
 ```js
-import { probeActivation } from '@your-scope/dsh-plugin-testkit'
+import { probeActivation } from '@deepseek-ai/dsh-plugin-testkit'
 
 const result = probeActivation({
   links: { '@scope/dsh-plugin-a': 'D:/projects/my-plugins/packages/a' },

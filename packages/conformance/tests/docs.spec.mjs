@@ -5,7 +5,7 @@
  * `fixtures/api-surfaces/` 改名成 `fixtures/api-usage/surfaces/`（合成面）并把真实面挪到
  * `fixtures/host-surfaces/` 之后，`packages/conformance/README.md` 里仍有两条
  * `fixtures/api-surfaces` 的引用 —— 照着 README 敲命令的人会得到一个不存在的路径，
- * 而全部 215 条用例依然全绿。这与 `DSH-C070`/`C071` 防的是同一类失败：
+ * 而**当时全部用例依然全绿**。这与 `DSH-C070`/`C071` 防的是同一类失败：
  * **"检查没真的查"和"文档指了一个不存在的路径"都会给出虚假的绿灯。**
  *
  * 检查范围刻意收窄到**具体的、承重的**路径，避免把示例占位符（`<宿主版本>`、`fixtures/nope`
@@ -112,6 +112,41 @@ test('合成 API 面与真实 API 面不混放（否则检测能力的证明会�
     const parsed = JSON.parse(readFileSync(join(real, name), 'utf8'))
     assert.equal(typeof parsed.hostVersion, 'string', `${name} 缺少 hostVersion`)
   }
+})
+
+test('两个包必须成对地声明 private + UNLICENSED（少了任何一半都会说谎）', () => {
+  // npm 文档对"私有、不打算授予任何权利"给出的写法是**两个字段一起**：
+  //   `private: true`   —— 从机制上阻止误发布（npm publish 直接失败）
+  //   `license: UNLICENSED` —— 把"没授权"写明确
+  // 少了 private，"不发布"只是口头承诺；少了 UNLICENSED，留空与"忘了填"无法区分，
+  // 而填 MIT 是虚标。两个包都不发布，所以这条是**长期约束**，不是"发布前再改"。
+  for (const pkg of ['conformance', 'testkit']) {
+    const dir = resolve(repoRoot, 'packages', pkg)
+    const pkgJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    assert.equal(pkgJson.private, true, `packages/${pkg} 必须 private: true —— 否则内部工具可能被误发布`)
+    assert.equal(
+      pkgJson.license,
+      'UNLICENSED',
+      `packages/${pkg} 的 license 必须是 UNLICENSED —— 空着无法与"忘了填"区分，MIT 是虚标`,
+    )
+
+    // lock 的根条目必须与 package.json 一致：它们曾经漂移过（license/bin 都对不上）
+    const lock = JSON.parse(readFileSync(join(dir, 'package-lock.json'), 'utf8'))
+    const rootEntry = lock.packages['']
+    assert.equal(rootEntry.name, pkgJson.name, `packages/${pkg} 的 lock 根条目 name 与 package.json 不一致`)
+    assert.equal(rootEntry.version, pkgJson.version, `packages/${pkg} 的 lock 根条目 version 与 package.json 不一致`)
+    assert.equal(
+      rootEntry.license,
+      pkgJson.license,
+      `packages/${pkg} 的 lock 根条目 license 与 package.json 不一致 —— 跑 npm install --package-lock-only 重算`,
+    )
+  }
+})
+
+test('两个包锁步版本（同升同降）', () => {
+  const a = JSON.parse(readFileSync(resolve(repoRoot, 'packages/conformance/package.json'), 'utf8'))
+  const b = JSON.parse(readFileSync(resolve(repoRoot, 'packages/testkit/package.json'), 'utf8'))
+  assert.equal(a.version, b.version, '两个包必须锁步版本 —— 分开升位会让"同一版本"失去意义')
 })
 
 //#endregion

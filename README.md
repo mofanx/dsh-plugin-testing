@@ -40,10 +40,11 @@ node packages/conformance/src/run-all.mjs --config conformance.local.json
 | `DSH_FIXTURES` | 主仓 session-snapshot 的 `record-suite` fixture 目录 | `testkit/tests/replay.spec.mjs` |
 | `DSH_HOST_NODE_MODULES` | 真实打包宿主的 `node_modules` 目录 | `conformance/tests/api-surface.spec.mjs` |
 
-## 落地待办（合入团队仓间开发仓库前）
+## 落地待办
 
-- [ ] 确定真实 npm scope，替换两包 `package.json` 的 `@your-scope/` 占位名（同步更新 `packages/testkit/README.md` 与 `docs/contract-v1.md` 中的示例 import 名）。
-- [ ] 确认最终仓库地址（当前 CHANGELOG 记为 `github.com/mofanx/dsh-plugin-testing`）。
+- [x] **npm scope 与许可证已拍板**：两包为 `@deepseek-ai/dsh-plugin-*` + `private: true` + `license: "UNLICENSED"`。scope 只是标识符（`private: true` 让它们**不可能**被发布），`UNLICENSED` 是 npm 文档对"私有、不授予任何权利"的标准写法 —— 留空与"忘了填"无法区分，而 `MIT` 是虚标。**若内网 registry 用别的 scope，改名是两条命令**，见 [`docs/intranet-porting.md`](docs/intranet-porting.md)。
+- [ ] **内网 GitLab 迁移**：本仓 CI 是 GitHub Actions，门禁靠 `actions/checkout` 跨仓拉取。内网需要 GitLab CI 版本 + 内网 registry 的宿主来源 —— 步骤、分叉面清单与"单向搬运"的工作方式见 [`docs/intranet-porting.md`](docs/intranet-porting.md)。仓库里已放一份 `.gitlab-ci.yml` 起手模板（**未在真实 GitLab runner 上验证过**）。
+- [ ] 确认最终仓库地址（当前 CHANGELOG 记为 `github.com/mofanx/dsh-plugin-testing`；内网迁移后地址会变，见上面那条）。
 - [ ] CI 上若要**真正执行**那 10 例（当前全跳过），需在 runner 提供宿主安装与 fixture —— **要求、步骤与版本影响见 [`docs/ci-real-host.md`](docs/ci-real-host.md)**。注意打包 launcher 是 Windows/macOS 产物，**Linux runner 跑不了真实启动用例**（那 9 例需要 Windows/macOS runner）。
 
 ## 版本约定

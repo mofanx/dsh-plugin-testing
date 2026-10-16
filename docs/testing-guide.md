@@ -37,8 +37,8 @@
 进程内 `ctx.plugin(...)` 套件**不充分**（DSH doctrine 明文）—— 产品可见插件必须有真实组合测试。用 testkit 起一个一次性 home：
 
 ```js
-import { createTestHome, testHomeArgs, testHomeEnv } from '@your-scope/dsh-plugin-testkit'
-// 只用一半时用子路径：'@your-scope/dsh-plugin-testkit/home' 或 '…/replay'
+import { createTestHome, testHomeArgs, testHomeEnv } from '@deepseek-ai/dsh-plugin-testkit'
+// 只用一半时用子路径：'@deepseek-ai/dsh-plugin-testkit/home' 或 '…/replay'
 
 const home = createTestHome({
   bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless', '<你的 bundle 包>'],

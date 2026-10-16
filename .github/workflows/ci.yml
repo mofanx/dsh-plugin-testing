@@ -37,10 +37,10 @@ jobs:
         working-directory: packages/conformance
         run: npm ci --no-audit --no-fund
 
-      # 本 job 刻意**不**提供真实宿主：160 个离线用例必须全绿，11 个依赖真实安装的
+      # 本 job 刻意**不**提供真实宿主：210 个离线用例必须全绿，11 个依赖真实安装的
       # 用例跳过并各自给出原因。真实宿主由下面的 real-host job 负责 —— 拆开是为了让
       # "我的改动弄坏了离线逻辑"与"这台 runner 没有宿主"不会混成同一个红。
-      - name: Unit suites（conformance 128 + testkit 43；其中 11 例需真实 DSH 安装，缺则跳过并给出原因）
+      - name: Unit suites（conformance 176 + testkit 45；其中 11 例需真实 DSH 安装，缺则跳过并给出原因）
         run: npm test
 
       - name: Gate self-check（合成插件 + 合成宿主，完全离线；预期 exit 0）

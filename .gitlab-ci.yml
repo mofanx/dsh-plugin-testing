@@ -1,0 +1,144 @@
+# 内网 GitLab 版 CI —— 与 .github/workflows/ci.yml 等价。
+#
+# ⚠️ **这份文件没有在真实 GitLab runner 上验证过。** 它是照 GitHub 版逐条搬过来的，
+#    命令本身与平台无关（纯 node/npm/grep），但以下三点必须由内网环境确认：
+#      1. `image: node:22` / `node:24` 在内网 registry 上是否存在（或换成内网镜像名）；
+#      2. `npm install @deepseek-ai/dsh@<版本>` 能否从内网 registry 取到宿主 ——
+#         这是**唯一**需要联网的一步，见 docs/intranet-porting.md；
+#      3. runner 的 executor 是 docker 还是 shell（下面按 docker 写）。
+#
+# 迁移到内网后，这份文件与 .github/ 可以并存：GitHub 侧忽略它，GitLab 侧忽略 .github/。
+# 也就是说**迁移本身不需要改动任何一个已有文件** —— 这是刻意的，见 docs/intranet-porting.md
+# 的"分叉面收敛"一节。
+
+stages:
+  - test
+  - real-host
+  - canary
+
+variables:
+  # 与 GitHub 版一致：关掉审计与募捐提示，让日志只剩有用信息
+  npm_config_audit: 'false'
+  npm_config_fund: 'false'
+  # 宿主装到这里。点开头的目录名是非法 npm 包名，所以下面写死一个合法 package.json
+  HOST_DIR: .dsh-host
+
+# ── 离线车道：快、到处都能跑、必须绿 ────────────────────────────────────────
+#
+# 与 GitHub 版一致，本 job **刻意不提供真实宿主**：210 个离线用例必须全绿，11 个依赖
+# 真实安装的用例跳过并各自给出原因。真实宿主由下面的 real-host job 负责 —— 拆开是为了
+# 让"我的改动弄坏了离线逻辑"与"这台 runner 没有宿主"不会混成同一个红。
+unit:
+  stage: test
+  image: node:${NODE_VERSION}
+  parallel:
+    matrix:
+      - NODE_VERSION: ['22', '24']
+  script:
+    - (cd packages/testkit && npm ci --no-audit --no-fund)
+    - (cd packages/conformance && npm ci --no-audit --no-fund)
+    - npm test
+    - node packages/conformance/src/run-all.mjs --config fixtures/conformance.selfcheck.json
+
+# ── 真实宿主车道：让那 11 个用例真正执行 ────────────────────────────────────
+#
+# 宿主是**完整安装**（自带 dsh-base / dsh-headless / dsh-app-boot 与 stock headless
+# profile），所以普通 Linux runner 上就能跑，不需要桌面打包产物。两个版本对应两条线：
+#   latest = 0.2.0-rc.2    桌面线（用户实际装到的那条）
+#   alpha  = 0.2.1-alpha.4 源码线（下一版）
+#
+# 用**固定版本**而不是 dist-tag：必需检查必须可复现（跟 tag 走会让上游发版把你的
+# 分支变红）。跟 tag 走的金丝雀见 canary job。
+real-host:
+  stage: real-host
+  image: node:24
+  parallel:
+    matrix:
+      - HOST: ['0.2.0-rc.2', '0.2.1-alpha.4']
+  script:
+    - mkdir -p "$HOST_DIR"
+    # 刻意不用 `npm init -y`：它从目录名推导包名，而 `.dsh-host` 是非法 npm 包名
+    - printf '%s' '{"name":"dsh-ci-host","private":true,"version":"0.0.0"}' > "$HOST_DIR/package.json"
+    - npm install --no-audit --no-fund --prefix "$HOST_DIR" "@deepseek-ai/dsh@$HOST"
+    # 断言布局：宿主结构若变化，这里给出明确报错，而不是让后续步骤含糊失败
+    - test -f "$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" || { echo "宿主布局不符合预期：缺少 @deepseek-ai/dsh/lib/bin.js"; exit 1; }
+    - node -e "const fs=require('fs');console.log('宿主 dsh-app-boot 版本 =', JSON.parse(fs.readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)"
+    # 测试支撑包与 DSH **同步发版**且 peer 钉成精确版本 —— 必须按宿主自己的版本装，
+    # 否则预检会禁用"来自另一条线"的那一份，replay 车道静默失效。不要按 dist-tag 装。
+    - HOST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)")
+    - echo "按宿主版本安装测试支撑包：$HOST_VERSION"
+    - npm install --no-audit --no-fund --no-save --prefix "$HOST_DIR" "@deepseek-ai/dsh-llm-replay@$HOST_VERSION" "@deepseek-ai/dsh-session-snapshot@$HOST_VERSION"
+    - (cd packages/testkit && npm ci --no-audit --no-fund)
+    - (cd packages/conformance && npm ci --no-audit --no-fund)
+    # 要抓的失败模式是**假的绿**：宿主没生效时用例会静默跳过而 CI 依然通过。
+    # 所以不只跑用例，还断言"跳过原因里没有'缺宿主'"。
+    - |
+      set -o pipefail
+      DSH_BIN="$PWD/$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" \
+      DSH_HOST_NODE_MODULES="$PWD/$HOST_DIR/node_modules" \
+      npm test 2>&1 | tee /tmp/unit.log
+
+      echo "── 跳过原因核对 ──"
+      if grep -qE '未找到 DSH launcher|未找到真实宿主' /tmp/unit.log; then
+        echo "真实宿主没有生效 —— 有用例因缺宿主而跳过，这个 job 的结论不可信"
+        grep -E '未找到 DSH launcher|未找到真实宿主' /tmp/unit.log
+        exit 1
+      fi
+
+      skipped=$(grep -oP 'skipped \K\d+' /tmp/unit.log | tail -1)
+      echo "skipped = ${skipped:-未知}"
+      # 只允许那 2 例 replay fixture 用例跳过（它们要 DSH 源码检出里的录制数据，
+      # npm 宿主不包含）。多跳一个都说明真实宿主没被用上。
+      if [ "${skipped:-99}" -gt 2 ]; then
+        echo "跳过了 ${skipped} 例（预期 ≤2，且只能是 replay fixture 用例）"
+        grep -E '^﹣ ' /tmp/unit.log
+        exit 1
+      fi
+    # 这条断言需要**真实的预发布宿主**，任何离线用例都替代不了：夹具用的是"修复前的
+    # 单范围"，而 C067 的判据正是"这条线只在源码线上分裂"。两个方向都在这里钉死。
+    - |
+      set -o pipefail
+      DSH_HOST_NODE_MODULES="$PWD/$HOST_DIR/node_modules" \
+      node packages/conformance/src/run-all.mjs --config fixtures/conformance.selfcheck.json \
+        --host "$DSH_HOST_NODE_MODULES" 2>&1 | tee /tmp/selfcheck.log
+
+      if [ "$HOST" = "0.2.1-alpha.4" ]; then
+        grep -q 'DSH-C067' /tmp/selfcheck.log \
+          || { echo "源码线宿主上应命中 DSH-C067（单范围夹具），但没有报"; exit 1; }
+        echo "ok: 源码线上 DSH-C067 已命中 —— 符合预期"
+      else
+        grep -q 'DSH-C067' /tmp/selfcheck.log \
+          && { echo "桌面线宿主上不应出现 DSH-C067（两种语义都成立）"; exit 1; }
+        echo "ok: 桌面线上无 DSH-C067 —— 符合预期"
+      fi
+  artifacts:
+    when: always
+    paths:
+      - /tmp/unit.log
+      - /tmp/selfcheck.log
+    expire_in: 1 week
+
+# ── 金丝雀：跟 dist-tag 走，允许失败，只用来提前预警 ──────────────────────
+canary:
+  stage: canary
+  image: node:24
+  allow_failure: true
+  parallel:
+    matrix:
+      - TAG: [latest, alpha]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+  script:
+    - mkdir -p "$HOST_DIR"
+    - printf '%s' '{"name":"dsh-canary-host","private":true,"version":"0.0.0"}' > "$HOST_DIR/package.json"
+    - npm install --no-audit --no-fund --prefix "$HOST_DIR" "@deepseek-ai/dsh@$TAG"
+    - test -f "$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" || { echo "宿主布局不符合预期：缺少 @deepseek-ai/dsh/lib/bin.js"; exit 1; }
+    - node -e "const fs=require('fs');console.log('宿主 dsh-app-boot 版本 =', JSON.parse(fs.readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)"
+    # 同 real-host：测试支撑包必须与宿主同版本（peer 是精确版本）
+    - HOST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)")
+    - npm install --no-audit --no-fund --no-save --prefix "$HOST_DIR" "@deepseek-ai/dsh-llm-replay@$HOST_VERSION" "@deepseek-ai/dsh-session-snapshot@$HOST_VERSION"
+    - (cd packages/testkit && npm ci --no-audit --no-fund)
+    # 在新宿主上跑探针套件（含 6 例真实启动与探针自证）。上游若改了组合方式、启动诊断
+    # 措辞或预检行为，这里会先红 —— 而它不阻塞任何 PR。
+    - DSH_BIN="$PWD/$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" node --test packages/testkit/tests/activate.spec.mjs

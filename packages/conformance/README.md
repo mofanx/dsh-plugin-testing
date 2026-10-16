@@ -4,7 +4,9 @@ DSH 插件的**静态一致性检查器**。运行时只依赖 `js-yaml`，且**
 
 > ⚠️ 这**不是** DSH 插件，而是一个独立 CLI 工具 —— 它不注册任何 Cordis 服务，不参与插件组合。
 >
-> ⚠️ **发布状态**：包名为占位 scope `@your-scope/dsh-plugin-conformance`（`private: true`），仅供本仓引用，尚未发布到任何 registry。正式发布前需替换 scope、去掉 `private`，并**确定许可证** —— 本仓无 `LICENSE` 文件，故 `package.json` 已移除 `license` 字段，不虚标 `MIT`。
+> ⚠️ **发布状态**：`@deepseek-ai/dsh-plugin-conformance`，`private: true`，**仅供本仓引用，不发布到任何 registry**。
+>
+> `private: true` + `license: "UNLICENSED"` 是**成对**的，两者都是 npm 文档对"私有、不打算授予任何权利"给出的标准写法：前者**从机制上**阻止误发布（`npm publish` 直接失败），后者把"没授权"写明确 —— 留空与"忘了填"无法区分，而 `MIT` 是虚标。scope 在这里**只是标识符，不是 registry 声明**（因为根本发布不了）；若内网 registry 用别的 scope，改名是两条命令，见 [`docs/intranet-porting.md`](../../docs/intranet-porting.md)。
 
 规则依据：`docs/contract-v1.md` 第六节。每个检查项都有稳定错误码 `DSH-C0xx`，CI 报告与豁免说明均引用它。
 
@@ -116,7 +118,7 @@ npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
   "dshHome": ".../.dsh",
   "packages": ["D:/projects/my-plugins/packages/*"],
   "profiles": [".../.dsh/profiles/desktop"],
-  "focusPackages": ["@your-scope/dsh-plugin-*"]
+  "focusPackages": ["@deepseek-ai/dsh-plugin-*"]
 }
 ```
 
@@ -147,7 +149,7 @@ npm run test:conformance:strict   # warn 也视为失败（预发 / 发布前）
 `focusPackages`（包名，支持 `*`）把**报告范围**收敛到自己的包：
 
 ```json
-{ "focusPackages": ["@your-scope/dsh-plugin-*"] }
+{ "focusPackages": ["@deepseek-ai/dsh-plugin-*"] }
 ```
 
 边界：只影响 `C050`/`C056` 的**归属过滤**，不改变检查本身；profile 自身的 `dependencies` **永远在范围内**（那是作者要修的）；被过滤的条目会**计数并打印**（`已按关注范围过滤：N 条…`），不静默丢弃。

@@ -4,7 +4,7 @@
  * Exists so the documented one-line import works:
  *
  * ```js
- * import { createTestHome, testHomeArgs, testHomeEnv } from '@your-scope/dsh-plugin-testkit'
+ * import { createTestHome, testHomeArgs, testHomeEnv } from '@deepseek-ai/dsh-plugin-testkit'
  * ```
  *
  * Without a `"."` entry in `exports`, Node answers that import with

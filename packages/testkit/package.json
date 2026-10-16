@@ -1,7 +1,8 @@
 {
-  "name": "@your-scope/dsh-plugin-testkit",
-  "version": "1.0.0",
+  "name": "@deepseek-ai/dsh-plugin-testkit",
+  "version": "1.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "DSH plugin test infrastructure: hermetic test homes and real-composition harnesses. Not a DSH plugin.",
   "type": "module",
   "exports": {

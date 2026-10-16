@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-testing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "DSH 插件测试基建 monorepo：testkit（隔离 home / keyless 回放）+ conformance（静态门禁）+ 指南与模板",
   "scripts": {
