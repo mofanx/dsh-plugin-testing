@@ -4,13 +4,19 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # 金丝雀：每周一 02:00 UTC —— 上游发新版时提前知道本工具还能不能工作。
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ── 离线车道：快、到处都能跑、必须绿 ────────────────────────────────────────
   test:
+    name: 离线（node ${{ matrix.node }}）
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,9 +37,154 @@ jobs:
         working-directory: packages/conformance
         run: npm ci --no-audit --no-fund
 
-      - name: Unit suites（conformance 116 + testkit 25；其中 6 例需真实 DSH 安装，缺则跳过并给出原因）
+      # 本 job 刻意**不**提供真实宿主：160 个离线用例必须全绿，11 个依赖真实安装的
+      # 用例跳过并各自给出原因。真实宿主由下面的 real-host job 负责 —— 拆开是为了让
+      # "我的改动弄坏了离线逻辑"与"这台 runner 没有宿主"不会混成同一个红。
+      - name: Unit suites（conformance 128 + testkit 43；其中 11 例需真实 DSH 安装，缺则跳过并给出原因）
         run: npm test
 
       - name: Gate self-check（合成插件 + 合成宿主，完全离线；预期 exit 0）
         run: |
           node packages/conformance/src/run-all.mjs --config fixtures/conformance.selfcheck.json
+
+  # ── 真实宿主车道：让那 11 个用例真正执行 ──────────────────────────────────
+  #
+  # 宿主直接从 npm 取 @deepseek-ai/dsh —— 它是**完整安装**（自带 dsh-base /
+  # dsh-headless / dsh-app-boot 与 stock headless profile），因此普通 ubuntu runner
+  # 上就能跑，不需要桌面打包产物。两个版本对应两条线：
+  #   latest = 0.2.0-rc.2    桌面线（用户实际装到的那条）
+  #   alpha  = 0.2.1-alpha.4 源码线（下一版）
+  #
+  # 用**固定版本**而不是 dist-tag：PR 必需检查必须可复现（跟 tag 走会让上游发版把你
+  # 的 PR 变红）。跟 tag 走的金丝雀见 dsh-canary job。
+  real-host:
+    name: 真实宿主 ${{ matrix.host }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        host:
+          - '0.2.0-rc.2'
+          - '0.2.1-alpha.4'
+    env:
+      HOST_DIR: .dsh-host
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # 刻意**不用** `npm init -y`：它从目录名推导包名，而 `.dsh-host` 这种点开头的
+      # 名字是非法 npm 包名（npm 报 Invalid name），会直接失败。写死一个合法
+      # package.json 既不依赖目录名，也让这一步没有隐式行为。
+      - name: 安装真实宿主 @deepseek-ai/dsh@${{ matrix.host }}
+        run: |
+          mkdir -p "$HOST_DIR"
+          printf '%s' '{"name":"dsh-ci-host","private":true,"version":"0.0.0"}' > "$HOST_DIR/package.json"
+          npm install --no-audit --no-fund --prefix "$HOST_DIR" "@deepseek-ai/dsh@${{ matrix.host }}"
+          # 断言布局：宿主结构若变化，这里给出明确报错，而不是让后续步骤含糊失败
+          test -f "$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" \
+            || { echo "宿主布局不符合预期：缺少 @deepseek-ai/dsh/lib/bin.js"; exit 1; }
+          node -e "const fs=require('fs');console.log('宿主 dsh-app-boot 版本 =', JSON.parse(fs.readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)"
+
+      - name: Install testkit deps
+        working-directory: packages/testkit
+        run: npm ci --no-audit --no-fund
+
+      - name: Install conformance deps
+        working-directory: packages/conformance
+        run: npm ci --no-audit --no-fund
+
+      # 这里要抓的失败模式是**假的绿**：宿主没生效时用例会静默跳过，CI 依然通过。
+      # 所以本步不只跑用例，还断言"跳过原因里没有'缺宿主'"。
+      #
+      # 仍然会跳过的是 2 例 replay fixture 用例：它们要的是 DSH **源码检出**里的录制
+      # 数据（packages/test-support/session-snapshot/tests/fixtures/record-suite），
+      # npm 宿主不包含它 —— 这是已知且如实的边界，不是环境错误。
+      - name: 全量用例（真实宿主已就位）
+        env:
+          DSH_BIN: ${{ github.workspace }}/.dsh-host/node_modules/@deepseek-ai/dsh/lib/bin.js
+          DSH_HOST_NODE_MODULES: ${{ github.workspace }}/.dsh-host/node_modules
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee /tmp/unit.log
+
+          echo "── 跳过原因核对 ──"
+          if grep -qE '未找到 DSH launcher|未找到真实宿主' /tmp/unit.log; then
+            echo "::error::真实宿主没有生效 —— 有用例因缺宿主而跳过，这个 job 的结论不可信"
+            grep -E '未找到 DSH launcher|未找到真实宿主' /tmp/unit.log
+            exit 1
+          fi
+
+          skipped=$(grep -oP 'skipped \K\d+' /tmp/unit.log | tail -1)
+          echo "skipped = ${skipped:-未知}"
+          # 只允许那 2 例 fixture 用例跳过。多跳一个都说明真实宿主没被用上。
+          if [ "${skipped:-99}" -gt 2 ]; then
+            echo "::error::跳过了 ${skipped} 例（预期 ≤2，且只能是 replay fixture 用例）"
+            grep -E '^﹣ ' /tmp/unit.log
+            exit 1
+          fi
+
+      # 这条断言需要**真实的预发布宿主**，任何离线用例都替代不了：夹具用的是
+      # "修复前的单范围"（>=0.2.0-rc.2 <0.3.0），而 C067 的判据正是"这条线只在源码线
+      # 上分裂"。桌面线上两种语义都成立 → 不该报；源码线 0.2.1-alpha.4 上运行时放行、
+      # 安装期拒绝 → 必须报。两个方向都在这里钉死。
+      - name: Gate self-check（真实宿主语境；源码线上单范围夹具必须被 C067 命中）
+        env:
+          DSH_HOST_NODE_MODULES: ${{ github.workspace }}/.dsh-host/node_modules
+          MATRIX_HOST: ${{ matrix.host }}
+        run: |
+          set -o pipefail
+          node packages/conformance/src/run-all.mjs --config fixtures/conformance.selfcheck.json \
+            --host "$DSH_HOST_NODE_MODULES" 2>&1 | tee /tmp/selfcheck.log
+
+          if [ "$MATRIX_HOST" = "0.2.1-alpha.4" ]; then
+            grep -q 'DSH-C067' /tmp/selfcheck.log \
+              || { echo "::error::源码线宿主上应命中 DSH-C067（单范围夹具），但没有报"; exit 1; }
+            echo "ok: 源码线上 DSH-C067 已命中 —— 符合预期"
+          else
+            grep -q 'DSH-C067' /tmp/selfcheck.log \
+              && { echo "::error::桌面线宿主上不应出现 DSH-C067（两种语义都成立）"; exit 1; }
+            echo "ok: 桌面线上无 DSH-C067 —— 符合预期"
+          fi
+
+  # ── 金丝雀：跟 dist-tag 走，允许失败，只用来提前预警 ──────────────────────
+  dsh-canary:
+    name: 金丝雀 ${{ matrix.tag }}
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: [latest, alpha]
+    env:
+      HOST_DIR: .dsh-host
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: 安装宿主 @deepseek-ai/dsh@${{ matrix.tag }}
+        run: |
+          mkdir -p "$HOST_DIR"
+          printf '%s' '{"name":"dsh-canary-host","private":true,"version":"0.0.0"}' > "$HOST_DIR/package.json"
+          npm install --no-audit --no-fund --prefix "$HOST_DIR" "@deepseek-ai/dsh@${{ matrix.tag }}"
+          test -f "$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" \
+            || { echo "宿主布局不符合预期：缺少 @deepseek-ai/dsh/lib/bin.js"; exit 1; }
+          node -e "const fs=require('fs');console.log('宿主 dsh-app-boot 版本 =', JSON.parse(fs.readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)"
+
+      - name: Install testkit deps
+        working-directory: packages/testkit
+        run: npm ci --no-audit --no-fund
+
+      # 在新宿主上跑探针套件（含 6 例真实启动与探针自证）。上游若改了组合方式、
+      # 启动诊断措辞或预检行为，这里会先红 —— 而它不阻塞任何 PR。
+      - name: 探针套件（新宿主上的自证）
+        working-directory: packages/testkit
+        env:
+          DSH_BIN: ${{ github.workspace }}/.dsh-host/node_modules/@deepseek-ai/dsh/lib/bin.js
+        run: node --test tests/activate.spec.mjs
