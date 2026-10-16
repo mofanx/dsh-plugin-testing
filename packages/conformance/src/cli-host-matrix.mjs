@@ -98,24 +98,43 @@ if (!json) {
 /** @type {ReturnType<typeof deriveHostMatrix>[]} */
 const reports = []
 let failed = false
+// A path typo / non-package directory is a **usage** mistake, not a finding
+// about the plugin — it must not be reported as "your plugin has problems"
+// (exit 1) when the truth is "your argument was wrong" (exit 2).
+let usageError = false
 
 for (const dir of dirs) {
   const absolute = resolve(dir)
   if (!existsSync(absolute) || !statSync(absolute).isDirectory()) {
-    console.log(`\n✗ 不是目录：${absolute}`)
-    failed = true
+    console.log(`\n✗ 不是目录：${absolute}（检查路径/通配符是否写对）`)
+    usageError = true
     continue
   }
-  const report = deriveHostMatrix(absolute, { candidates: list.versions, knownGaps: list.knownGaps })
+  /** @type {ReturnType<typeof deriveHostMatrix>} */
+  let report
+  try {
+    report = deriveHostMatrix(absolute, { candidates: list.versions, knownGaps: list.knownGaps })
+  } catch (error) {
+    console.log(`\n✗ ${absolute}`)
+    console.log(`    ${error?.message ?? error}`)
+    usageError = true
+    continue
+  }
   reports.push(report)
   if (report.findings.some((f) => f.severity === 'error' || (strict && f.severity === 'warn'))) failed = true
+}
+
+// Nothing was actually checked — that is not a pass. Same principle as C071.
+if (reports.length === 0 && !usageError) {
+  console.log('\n✗ 没有可检查的目标（所有路径都不是包目录）—— "一个都没查"不等于"通过"')
+  usageError = true
 }
 
 if (json) {
   console.log(
     JSON.stringify(
       {
-        ok: !failed,
+        ok: !failed && !usageError,
         candidates: { path: absoluteCandidates, source: list.source, generatedAt: list.generatedAt, versions: list.versions, knownGaps: list.knownGaps },
         reports,
       },
@@ -123,8 +142,10 @@ if (json) {
       2,
     ),
   )
-  process.exit(failed ? 1 : 0)
+  process.exit(usageError ? 2 : failed ? 1 : 0)
 }
+
+if (usageError) process.exit(2)
 
 for (const report of reports) {
   console.log(`\n${report.name}@${report.version ?? '<无版本>'}`)
@@ -180,3 +201,4 @@ for (const report of reports) {
 }
 
 process.exit(failed ? 1 : 0)
+

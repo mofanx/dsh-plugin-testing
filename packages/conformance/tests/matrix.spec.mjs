@@ -12,9 +12,10 @@ import assert from 'node:assert/strict'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
-import { deriveHostMatrix, readCandidateList } from '../src/matrix.mjs'
+import { deriveHostMatrix, readCandidateList, readDshPeers } from '../src/matrix.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const fixtures = resolve(here, '..', '..', '..', 'fixtures', 'host-matrix')
@@ -237,6 +238,81 @@ test('deriveHostMatrix：row 逐 peer 保留判定，便于解释"为什么这�
   assert.equal(row.perPeer[0].dependency, '@deepseek-ai/dsh')
   assert.equal(row.perPeer[0].runtime, true)
   assert.equal(row.perPeer[0].install, false)
+})
+
+//#endregion
+
+//#region 错误路径：路径写错 / 不是包目录
+
+test('readDshPeers：路径没有 package.json 时给可读报错，而不是裸 ENOENT 栈', () => {
+  // 真实的触发方式很简单：通配符匹配到一个**不是包**的目录。
+  // 裸栈会让使用者以为"我的插件有问题"，而真相是"我的参数写错了"。
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-matrix-'))
+  try {
+    assert.throws(
+      () => readDshPeers(dir),
+      (error) => {
+        assert.match(error.message, /读取不到 package\.json/)
+        assert.match(error.message, /ENOENT/)
+        assert.ok(!error.message.includes('at readFileSync'), '不得把 Node 栈当报文')
+        return true
+      },
+    )
+    // 同级：JSON 语法错误也要是可读报文
+    writeFileSync(join(dir, 'package.json'), '{ not json', 'utf8')
+    assert.throws(() => readDshPeers(dir), /不是合法 JSON/)
+    assert.throws(() => deriveHostMatrix(dir, { candidates: PUBLISHED }), /不是合法 JSON/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('cli：不是包目录时报用法错误（exit 2），而不是"插件有问题"（exit 1）', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-matrix-cli-'))
+  try {
+    const cli = resolve(here, '..', 'src', 'cli-host-matrix.mjs')
+    // 空目录 —— 等价于通配符落到了一个不是包的目录上
+    const result = spawnSync(process.execPath, [cli, dir, '--candidates', publishedList], { encoding: 'utf8' })
+    assert.equal(result.status, 2, `期望用法错误 exit 2，实际 ${result.status}`)
+    assert.match(result.stdout, /读取不到 package\.json/)
+    assert.ok(!result.stdout.includes('at readFileSync'), 'stdout 里不得出现 Node 栈')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('cli：全部目标都落空时不得以 0 退出（"一个都没查"不等于"通过"）', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-matrix-cli-'))
+  try {
+    const cli = resolve(here, '..', 'src', 'cli-host-matrix.mjs')
+    const missing = join(dir, 'nope')
+    const result = spawnSync(process.execPath, [cli, missing, '--candidates', publishedList], { encoding: 'utf8' })
+    assert.equal(result.status, 2)
+    assert.match(result.stdout, /不是目录/)
+    assert.ok(!/结论：未发现空洞/.test(result.stdout), '不得打印"未发现空洞"这种像结论的话')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('cli：干净包 exit 0、有空洞 exit 1、warn 只在 --strict 下阻断', () => {
+  const cli = resolve(here, '..', 'src', 'cli-host-matrix.mjs')
+  const run = (...extra) =>
+    spawnSync(process.execPath, [cli, ...extra, '--candidates', publishedList], { encoding: 'utf8' })
+
+  const clean = run(join(fixtures, 'clean'))
+  assert.equal(clean.status, 0)
+  assert.match(clean.stdout, /未发现空洞/)
+
+  const hole = run(join(fixtures, 'hole'))
+  assert.equal(hole.status, 1, '空洞是 error，必须让命令失败')
+  assert.match(hole.stdout, /DSH-C068/)
+
+  // 只有 warn 时默认不阻断（与仓库其他 warn 级规则、以及插件仓库的门禁配置一致）
+  const warnOnly = run(join(fixtures, 'divergence'))
+  assert.equal(warnOnly.status, 0, 'warn 默认不阻断')
+  assert.match(warnOnly.stdout, /DSH-C067/)
+  assert.equal(run(join(fixtures, 'divergence'), '--strict').status, 1, '--strict 下 warn 才阻断')
 })
 
 //#endregion

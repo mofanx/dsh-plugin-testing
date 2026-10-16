@@ -123,11 +123,33 @@ export function readCandidateList(filePath) {
 /**
  * Read a package's dsh runtime peers (the only peers the preflight grades).
  *
+ * Throws a readable message rather than letting a raw `ENOENT` escape: a path
+ * typo or a directory without a manifest is a **usage** mistake, and the caller
+ * must be able to tell it apart from a finding about the plugin. (A glob that
+ * matches a non-package directory is the easy way to hit this.)
+ *
  * @param {string} packageDir
  * @returns {{ name: string, version: string | undefined, peers: Record<string, string> }}
  */
 export function readDshPeers(packageDir) {
-  const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
+  const manifestPath = join(packageDir, 'package.json')
+  /** @type {string} */
+  let raw
+  try {
+    raw = readFileSync(manifestPath, 'utf8')
+  } catch (error) {
+    throw new Error(`读取不到 package.json：${manifestPath}（${error?.code ?? error?.message ?? error}）`)
+  }
+  /** @type {any} */
+  let manifest
+  try {
+    manifest = JSON.parse(raw)
+  } catch (error) {
+    throw new Error(`package.json 不是合法 JSON：${manifestPath}（${error?.message ?? error}）`)
+  }
+  if (manifest === null || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    throw new Error(`package.json 必须是 JSON 对象：${manifestPath}`)
+  }
   const declared = manifest.peerDependencies !== null && typeof manifest.peerDependencies === 'object' ? manifest.peerDependencies : {}
   /** @type {Record<string, string>} */
   const peers = {}
