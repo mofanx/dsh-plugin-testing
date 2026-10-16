@@ -1,0 +1,9 @@
+{
+  "name": "@probe/no-dsh-peers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.4 <4.1.0"
+  }
+}

@@ -63,8 +63,15 @@ export const RULES = {
   'DSH-C066': { severity: 'warn', title: '支撑包（非 profile 行）的 peer 不满足宿主（尚未阻断）', task: 'T15' },
   'DSH-C067': { severity: 'warn', title: 'peer 范围只被运行时预检接受，会被安装期裸 semver 拒绝（预发布元组未覆盖）', task: 'T12' },
 
-  // --- gate configuration (T13) -----------------------------------------
-  // A gate that checks nothing must never look like a gate that passed. These
+  // --- host-version matrix (T17) ----------------------------------------
+  // Evaluated against an explicit list of *published* host versions rather than
+  // against one installed host, so it answers "which host versions does this
+  // declaration actually cover?". A hole means a version between two covered
+  // ones is excluded, so a user there is disabled although the plugin claims its
+  // neighbours — an error, same class as C060.
+  'DSH-C068': { severity: 'error', title: '声明的宿主范围存在空洞：区间内已发布的版本不被接纳', task: 'T17' },
+
+  // --- gate configuration (T13) -----------------------------------------  // A gate that checks nothing must never look like a gate that passed. These
   // two codes make a misconfigured run a loud failure instead of a vacuous green.
   'DSH-C070': {
     severity: 'error',
@@ -106,6 +113,13 @@ export const MOUNTED_RULE_CODES = Object.freeze(
 export const CONFIG_RULE_CODES = Object.freeze(
   Object.entries(RULES)
     .filter(([, rule]) => rule.task === 'T13')
+    .map(([code]) => code),
+)
+
+/** Rules implemented by the T17 host-version matrix pass. */
+export const MATRIX_RULE_CODES = Object.freeze(
+  Object.entries(RULES)
+    .filter(([, rule]) => rule.task === 'T17')
     .map(([code]) => code),
 )
 

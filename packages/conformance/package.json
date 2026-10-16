@@ -9,12 +9,14 @@
     "dsh-plugin-version-check": "./src/cli-version.mjs",
     "dsh-plugin-composition-check": "./src/cli-composition.mjs",
     "dsh-plugin-conformance-all": "./src/run-all.mjs",
-    "dsh-plugin-api": "./src/cli-api.mjs"
+    "dsh-plugin-api": "./src/cli-api.mjs",
+    "dsh-plugin-host-matrix": "./src/cli-host-matrix.mjs"
   },
   "exports": {
     ".": "./src/manifest.mjs",
     "./manifest": "./src/manifest.mjs",
     "./peer": "./src/peer.mjs",
+    "./matrix": "./src/matrix.mjs",
     "./composition": "./src/composition.mjs",
     "./run-all": "./src/run-all.mjs",
     "./semver": "./src/semver.mjs",
