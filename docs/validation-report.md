@@ -652,10 +652,13 @@ T18 没在插件里找到新问题，却在把版本号与产物对齐时抓到�
 | 豁免审批 | 只定**机制**，审批人留作可替换的默认值（仓库内 `compatibility.json` + CODEOWNERS + 受保护分支） |
 | 迁移文档 | 新增 `docs/intranet-porting.md`（步骤 + **分叉面清单 8 项，仅 3 项有真实冲突成本** + 单向同步流程） |
 | GitLab CI | 新增 `.gitlab-ci.yml`（YAML 可解析、车道与 GitHub 版一致；**未在真实 runner 上验证过**，已在文件头与文档里如实标注） |
+| 插件仓库的门禁 | 跨仓取本仓库改用普通 `git clone`（**已实测**：本地复现车道 C 退出码 0，CI 日志里可见 `Cloning into '.dsh-testing'` → `HEAD is now at b22e9d8` → 5 个版本全部 ✓）—— 内网迁移在这份工作流里退化成**改一行** `TESTING_REPO_URL` |
 | 用例数 | 219 → **221**（文档路径 4 条 → 6 条，新增发布面成对约束 2 条） |
 | 版本 | 1.0.0 → **1.1.0**（三个 `package.json` 与两个 lock 同步） |
 
 **"未验证"与"已验证"必须分开写**：`.gitlab-ci.yml` 的 YAML 语法与车道对应关系是本机验证过的；它能否在真实 GitLab runner 上跑通**没有**验证过，因为这里没有那样的环境。这句话同时写在文件头和 `docs/intranet-porting.md` 里 —— 让读者自己判断可信度，而不是靠一句"已支持内网"糊过去。
+
+**同一轮还改掉了插件仓库里唯一一处"迁移时必须重写"的东西**：门禁原先用 `actions/checkout` 的 `repository:` / `ref:` 跨仓取本仓库，那是 GitHub 专有机制、GitLab 上没有对应物。换成 `git clone --no-checkout` + `git checkout --detach` 之后，两个平台跑的是同一条命令，内网迁移在这份工作流里**退化成改一行** `TESTING_REPO_URL`（`TESTING_REV` 的值可以照用 —— `--mirror` 搬运保留提交 SHA）。这一处**是实测过的**，且分两层：本机用同一条命令对真实远端克隆并 `checkout b22e9d8` 成功；随后 CI 日志里能读到 `Cloning into '.dsh-testing'...` → `HEAD is now at b22e9d8` → `测试基建 revision = b22e9d8…` → 车道 C 五个版本全部 ✓。**"能跑"这件事不靠推断，靠日志。**
 
 ## 十五、一句话总结
 

@@ -97,9 +97,11 @@ cd dsh-plugin-testing.git && git push --mirror <内网 GitLab 地址>
 | 5 | 内网宿主构建 → 重新采集 `fixtures/host-surfaces/` | **修改已有文件** | **有** —— 同上 |
 | 6 | 仓库地址（README/CHANGELOG 里写的 GitHub 链接） | 修改已有文件 | 低（很少变） |
 | 7 | npm scope（**仅当**内网 registry 要求不同 scope） | 修改已有文件 | 低（一次到位） |
-| 8 | 插件仓库的 `TESTING_REV` / `TESTING_REPO` | 修改已有文件 | **有** —— 见 §五 |
+| 8 | 插件仓库的 `TESTING_REPO_URL`（**改一行**） | 修改已有文件 | 低 —— 取仓库已改成平台无关的 `git clone`，见 §五 |
+| 9 | 插件仓库 CI 里 GitHub Actions 专有的写法（`actions/*`、`pnpm/action-setup`） | 修改已有文件 | 中 —— 平台适配，需逐个换 |
 
-第 4、5、8 项是**真正的分叉成本**，其余都是零成本或一次性。
+第 4、5 项是**真正的分叉成本**（上游每次发版都要重做），第 9 项是一次性的平台适配，
+其余都是零成本或一次性。
 
 ### 3.1 第 4/5 项为什么必须重新生成 —— 一条内网独有的假绿
 
@@ -162,21 +164,26 @@ node <仓库>/packages/conformance/src/cli-api.mjs \
 插件仓库的门禁要**跨仓拉取本仓库**，并且**钉在某个提交 SHA** 上：
 
 ```yaml
-TESTING_REPO: mofanx/dsh-plugin-testing
+TESTING_REPO_URL: https://github.com/mofanx/dsh-plugin-testing.git
 TESTING_REV: <测试仓库的提交 SHA>
 ```
 
-内网侧这一步必须改（两个值都要），因为：
+**这一段已经改成平台无关的了**：取仓库用的是普通 `git clone --no-checkout` +
+`git checkout --detach`，**不是** `actions/checkout` 的 `repository:` / `ref:`（那是 GitHub
+专有机制，GitLab 上没有对应物）。两个平台上跑的是同一条命令，所以内网迁移在这份工作流里
+退化成**改一行**：
 
-- `actions/checkout` 的 `repository:` 是 GitHub 专有机制，GitLab 上要用
-  `git clone` + `git checkout <SHA>`（或 GitLab 的跨项目 CI 变量 / 子模块）；
-- 内网 GitLab 的项目路径与 GitHub 的 `owner/repo` 不同；
-- 内网搬过去的提交 **SHA 保持不变**（`--mirror` 搬的话），所以 `TESTING_REV` 的值本身可以照用，
-  只有 `TESTING_REPO` 必须换成内网地址。
+- `TESTING_REPO_URL` 换成内网 GitLab 的 clone 地址；
+- `TESTING_REV` 的值**可以照用** —— 用 `git clone --mirror` 搬运会保留提交 SHA；
+- 克隆后会回显实际取到的 SHA，钉错了当场可见。
 
-**这是插件仓库里唯一的内网专属改动**，且它是"修改已有文件"（有冲突风险），所以要按 §三 登记。
-把跨仓拉取写成**一段可替换的 `git clone`**，比依赖平台的 checkout 动作更容易迁移 ——
-GitHub 与 GitLab 上跑的是同一条命令。
+> 之所以能这么改，前提是**两个仓库都是公开的**（公开仓库不需要凭据）。若将来转私有，
+> 需要在 clone URL 里带上 token 之类的凭据 —— 而"公开"这件事本身在内网迁移后不再成立，
+> 内网 GitLab 上的可见性由内网自己决定（同一台 GitLab 内通常直接可读）。
+
+GitHub Actions 专有的**其余部分**（`actions/checkout`、`actions/setup-node`、
+`pnpm/action-setup`、`${{ }}` 表达式）仍需在 GitLab 上换成对应写法 —— 那属于平台适配，
+不是"改一行"。
 
 ### 5.1 顺带查清的发布面（两个仓库**不一样**，不要照搬）
 
