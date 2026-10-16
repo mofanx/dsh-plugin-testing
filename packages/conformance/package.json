@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-plugin-conformance",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "license": "UNLICENSED",
   "description": "Static conformance checker for DSH plugins: manifest + exports rules (DSH-C0xx). Not a DSH plugin.",

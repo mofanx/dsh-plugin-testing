@@ -114,31 +114,42 @@ test('合成 API 面与真实 API 面不混放（否则检测能力的证明会�
   }
 })
 
-test('两个包必须成对地声明 private + UNLICENSED（少了任何一半都会说谎）', () => {
+test('三个清单都必须成对地声明 private + UNLICENSED（少了任何一半都会说谎）', () => {
   // npm 文档对"私有、不打算授予任何权利"给出的写法是**两个字段一起**：
   //   `private: true`   —— 从机制上阻止误发布（npm publish 直接失败）
   //   `license: UNLICENSED` —— 把"没授权"写明确
   // 少了 private，"不发布"只是口头承诺；少了 UNLICENSED，留空与"忘了填"无法区分，
-  // 而填 MIT 是虚标。两个包都不发布，所以这条是**长期约束**，不是"发布前再改"。
-  for (const pkg of ['conformance', 'testkit']) {
-    const dir = resolve(repoRoot, 'packages', pkg)
+  // 而填 MIT 是虚标。三个清单都不发布，所以这条是**长期约束**，不是"发布前再改"。
+  //
+  // 根 `package.json` 最初漏了 `license` —— 规则只落在两个包上，第三个清单就漂了。
+  // 这正是"留空与忘了填无法区分"要防的事，所以清单是**显式枚举的三个**，
+  // 而不是"packages 目录下的那些"（后者天然看不见根本身）。
+  const manifests = [
+    { label: 'package.json（根）', dir: repoRoot },
+    { label: 'packages/conformance', dir: resolve(repoRoot, 'packages', 'conformance') },
+    { label: 'packages/testkit', dir: resolve(repoRoot, 'packages', 'testkit') },
+  ]
+  for (const { label, dir } of manifests) {
     const pkgJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
-    assert.equal(pkgJson.private, true, `packages/${pkg} 必须 private: true —— 否则内部工具可能被误发布`)
+    assert.equal(pkgJson.private, true, `${label} 必须 private: true —— 否则内部工具可能被误发布`)
     assert.equal(
       pkgJson.license,
       'UNLICENSED',
-      `packages/${pkg} 的 license 必须是 UNLICENSED —— 空着无法与"忘了填"区分，MIT 是虚标`,
+      `${label} 的 license 必须是 UNLICENSED —— 空着无法与"忘了填"区分，MIT 是虚标`,
     )
 
+    // 只有两个包有 lock；根清单没有依赖，也就没有 lock
+    const lockPath = join(dir, 'package-lock.json')
+    if (!existsSync(lockPath)) continue
+
     // lock 的根条目必须与 package.json 一致：它们曾经漂移过（license/bin 都对不上）
-    const lock = JSON.parse(readFileSync(join(dir, 'package-lock.json'), 'utf8'))
-    const rootEntry = lock.packages['']
-    assert.equal(rootEntry.name, pkgJson.name, `packages/${pkg} 的 lock 根条目 name 与 package.json 不一致`)
-    assert.equal(rootEntry.version, pkgJson.version, `packages/${pkg} 的 lock 根条目 version 与 package.json 不一致`)
+    const rootEntry = JSON.parse(readFileSync(lockPath, 'utf8')).packages['']
+    assert.equal(rootEntry.name, pkgJson.name, `${label} 的 lock 根条目 name 与 package.json 不一致`)
+    assert.equal(rootEntry.version, pkgJson.version, `${label} 的 lock 根条目 version 与 package.json 不一致`)
     assert.equal(
       rootEntry.license,
       pkgJson.license,
-      `packages/${pkg} 的 lock 根条目 license 与 package.json 不一致 —— 跑 npm install --package-lock-only 重算`,
+      `${label} 的 lock 根条目 license 与 package.json 不一致 —— 跑 npm install --package-lock-only 重算`,
     )
   }
 })

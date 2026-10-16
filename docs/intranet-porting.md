@@ -98,10 +98,10 @@ cd dsh-plugin-testing.git && git push --mirror <内网 GitLab 地址>
 | 6 | 仓库地址（README/CHANGELOG 里写的 GitHub 链接） | 修改已有文件 | 低（很少变） |
 | 7 | npm scope（**仅当**内网 registry 要求不同 scope） | 修改已有文件 | 低（一次到位） |
 | 8 | 插件仓库的 `TESTING_REPO_URL`（**改一行**） | 修改已有文件 | 低 —— 取仓库已改成平台无关的 `git clone`，见 §五 |
-| 9 | 插件仓库 CI 里 GitHub Actions 专有的写法（`actions/*`、`pnpm/action-setup`） | 修改已有文件 | 中 —— 平台适配，需逐个换 |
+| 9 | 插件仓库的 `.gitlab-ci.yml` | **新增**（已在仓库里） | 无 —— GitHub Actions 专有写法已全部换成 GitLab 对应写法，见 §五 |
 
-第 4、5 项是**真正的分叉成本**（上游每次发版都要重做），第 9 项是一次性的平台适配，
-其余都是零成本或一次性。
+第 4、5 项是**真正的分叉成本**（上游每次发版都要重做）；其余都是零成本或一次性
+（第 1、9 项是**新增文件**，同步时根本不冲突；第 8 项只改一行）。
 
 ### 3.1 第 4/5 项为什么必须重新生成 —— 一条内网独有的假绿
 
@@ -181,9 +181,30 @@ TESTING_REV: <测试仓库的提交 SHA>
 > 需要在 clone URL 里带上 token 之类的凭据 —— 而"公开"这件事本身在内网迁移后不再成立，
 > 内网 GitLab 上的可见性由内网自己决定（同一台 GitLab 内通常直接可读）。
 
-GitHub Actions 专有的**其余部分**（`actions/checkout`、`actions/setup-node`、
-`pnpm/action-setup`、`${{ }}` 表达式）仍需在 GitLab 上换成对应写法 —— 那属于平台适配，
-不是"改一行"。
+GitHub Actions 专有的**其余部分**已经全部换成 GitLab 对应写法，落在插件仓库的
+`.gitlab-ci.yml`（**新增文件**，所以同步时零冲突）：
+
+| GitHub Actions | GitLab CI |
+|---|---|
+| `actions/checkout@v4` | GitLab 自动 clone（`GIT_STRATEGY` 默认就是 `clone`） |
+| `actions/setup-node@v4` | `image: node:24` |
+| `pnpm/action-setup@v4` | `before_script` 里 `npm install -g pnpm@<版本>` |
+| `${{ matrix.host }}` | `parallel:matrix` 的 `$HOST` |
+| `${{ env.X }}` | `variables:` 的 `$X` |
+| `continue-on-error: true` | `allow_failure: true` |
+| `if: github.event_name == 'schedule' \|\| 'workflow_dispatch'` | `rules: $CI_PIPELINE_SOURCE == "schedule"` / `== "web"` |
+| `working-directory:` | 脚本里 `cd` |
+| `cache: pnpm`（setup-node） | 全局 `cache:` + `pnpm config set store-dir` 到项目目录内 |
+
+> ⚠️ 与测试仓库的 `.gitlab-ci.yml` 一样，**未在真实 GitLab runner 上验证过**。已做的校验是：
+> 两份文件都是合法 YAML；三个 job 的 `script`/`before_script` 全是字符串（无嵌套数组）；
+> 与 GitHub 版逐条对应；`TESTING_REV` / `TESTING_REPO_URL` 两平台一致。插件仓库那份文件头
+> 也列了需内网确认的三点（镜像是否存在、能否取到宿主、executor 类型）。
+
+两份文件里**刻意不用** YAML 锚点/别名（`&anchor` / `*alias`），也不用 `!reference`：
+`- *alias` 指向一个序列时会变成**嵌套数组**，能否被展平成多条命令取决于 GitLab 的隐式行为，
+本机任何标准校验器都验不了。这个文件的意义就是"可迁移、可校验"，所以宁可把
+`before_script` 与取仓库那几步重复写两遍。
 
 ### 5.1 顺带查清的发布面（两个仓库**不一样**，不要照搬）
 
@@ -207,6 +228,29 @@ scoped 包以公开方式发布；发布到内网 registry 时它**无害但无�
 （`@deepseek-ai/dsh-plugin-eda-sch` 等）都要一起改。这属于"要发布就得先定 registry"的范畴，
 与本次迁移的 CI 部分相互独立。
 
+### 5.2 搬 CI 的过程中顺带查出并修掉的一个"空转断言"
+
+搬 CI 时真的查出一个问题，记在这里备查 —— 它与测试工具本身无关（是插件仓库自己的 CI 缺陷），
+但它恰好就是**本仓库要防的那类问题**：
+
+插件仓库 `dsh-gate` 里有一歩叫 **「断言构建产物存在」**，自述"构建失败/漏包时给明确报错"，
+实际**对本仓库一个包都没生效**。原因是该仓库 5 个包的 `exports["."]` 都是**条件对象**
+（形如 `{"types":…, "default":"./lib/index.js"}`），不是字符串；而旧脚本写的是
+
+```js
+if (!entry || typeof entry !== 'string') { console.log('跳过（未声明入口）…'); process.exit(0); }
+```
+
+于是 5 个包**全部**走「跳过（未声明入口）」并退出 0 —— **构建产物一个都不剩也照样绿**。
+
+改成按 Node 的条件解析规则（`import > node > default > require`；数组取首个可解析分支）
+取出**真正会被加载**的那个文件；取不到入口就**失败**，不再静默跳过。两个平台的 CI 文件里
+同步修改，两侧脚本逐字相同。
+
+> **发现路径值得记住**：把 CI 里的命令抠出来在本地真跑一遍（而不是只看它写了什么），
+> 并且**故意制造负例**（删掉一个构建产物）看它会不会红 —— 正是负例那一步暴露了它不会红。
+> 只看正向绿灯，空转与真断言长得一模一样。
+
 ## 六、这套设计里哪些**不**需要为内网改动
 
 留个底，免得迁移时把不该动的也动了：
@@ -217,7 +261,7 @@ scoped 包以公开方式发布；发布到内网 registry 时它**无害但无�
 | `docs/contract-v1.md` 的规则定义 | 同上 |
 | 全部 `fixtures/`（除 §三 第 4/5 项） | 合成夹具，与宿主来源无关 |
 | 221 个用例 | 210 个完全离线；11 个只看 `DSH_*` 环境变量指向哪里 |
-| `private: true` + `license: UNLICENSED` | 与"发布到哪个 registry"无关 —— 这两个包**永不发布** |
+| `private: true` + `license: UNLICENSED` | 与"发布到哪个 registry"无关 —— 三个清单（根 + 两个包）**永不发布** |
 | npm scope | 只是标识符（`private: true` 让发布不可能）；只有内网 registry 强制要求时才改 |
 
 **一句话**：工具本身**不需要**为内网改动任何逻辑 —— 它只从环境变量拿宿主、只从仓库内读清单。
