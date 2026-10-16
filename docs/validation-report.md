@@ -374,6 +374,27 @@ npm error Invalid name: ".dsh-host"
 
 本地已按 CI 条件复刻验证（把 5 个包的 `package.json` 复制到临时目录、不带 `lib/`）：未构建 → 5 个包全部被列出、退出码 1；已构建的开发检出 → `MISSING_CREDENTIAL`、退出码 0。
 
+### 6. 最终结果：两条车道 × 两条宿主线全绿
+
+修复后重跑（`668c29c`，门禁钉 `f0b4eac`），**两条宿主线 × 两条车道全部通过**（run [38838324105](https://github.com/mofanx/deepseek-eda-plugins/actions/runs/38838324105)）。车道 B 在 `ubuntu-latest` 上的实测输出：
+
+```
+DSH 插件运行时激活探针
+  launcher    : …/.dsh-host/node_modules/@deepseek-ai/dsh/lib/bin.js
+  被测包      : 5 个（eda-bundle / eda-core / eda-easyeda / eda-sch / eda-sch-gen @0.1.0-alpha.2）
+运行时禁用的行：无
+终止状态    : MISSING_CREDENTIAL
+启动诊断    : didNotActivate=false pending=false loadFailure=false
+结论：通过 —— 关注的行均未被运行时禁用，且启动已越过兼容性预检
+```
+
+两点值得记下：
+
+- **这条车道确实有检出能力，而且证据就是它自己此前的那次失败** —— 同一条命令曾在同一平台上报出 3 行 `failed to import`。一条从不失败的检查无法证明任何事；这条的灵敏度是被一次真实失败证明的。
+- **`didNotActivate=false` 是对 EDA 插件行的直接断言**，不只是"宿主起来了"：它意味着树里**没有任何一行**启动失败，而 EDA 的三行（`optional-schematic` / `optional-schematic-easyeda` / `optional-tool-schematic`）正是在这个 bundle 补丁里挂载的。
+
+至此"插件修复 → 静态门禁 → 运行时探针 → 真实 CI"四层证据齐备，且最后一层可被任何人用一条命令复跑。
+
 ## 十二、一句话总结
 
 这个项目在真实插件仓库上**找出了 14 条此前不可见的问题、没有一条误报**，其中一条（豁免失效）是需要立刻处理的；而它做到这一点**不需要 EDA 客户端、不需要模型、不需要构建、几秒完成**。
