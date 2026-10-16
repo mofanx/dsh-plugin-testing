@@ -72,16 +72,22 @@ npm view @deepseek-ai/dsh versions --json   # 把结果填进清单的 versions�
 
 ```bash
 # 先在一台装好的宿主上采集（每个版本一次，约 1 分钟；产物 ~120 KB，建议提交）
+#   依赖版本要写精确值：^0.2.1-alpha.2 会解析到同元组最新的 alpha.4，不是 alpha.2
 node src/cli-api.mjs --host <宿主 node_modules> \
-  --baseline fixtures/api-surfaces/surface-<宿主版本>.json --write
+  --baseline fixtures/host-surfaces/surface-<宿主版本>.json --write
 
 # 再把"声明覆盖集"与"代码实际引用的 API"求交
 node src/cli-host-matrix.mjs <packageDir...> \
   --candidates fixtures/host-versions.published.json \
-  --surfaces fixtures/api-surfaces
+  --surfaces fixtures/host-surfaces
 ```
 
 采集产物自带 `hostVersion`，所以**目录里放哪些版本是自解释的**，不靠文件名猜。检查时**零成本、不联网、不启动宿主**，因此适合每次 PR 都跑（实测探针不适合）。
+
+> 仓库里已提交 `fixtures/host-surfaces/`（`0.2.0-rc.2` 与 `0.2.1-alpha.1…alpha.4`）。
+> T18 的**单元测试**用的是 `fixtures/api-usage/surfaces/` 里的**合成**面（`1.0.0` / `2.0.0`），
+> 故意造出"同一份代码在一个版本上通过、在另一个版本上报错"的对照 —— 两者不要混用：
+> 拿真实面做测试，会让"检测能力"的证明退化成"碰巧真实数据里没有这个缺陷"。
 
 判据是三种缺失之一：整个包不在该宿主里（`noPackage`）、子路径不存在（`noSubpath`）、子路径在但具名符号没了（`noSymbol`）。三者都是 error —— 它们不是"功能降级"，而是**加载即失败**。
 
