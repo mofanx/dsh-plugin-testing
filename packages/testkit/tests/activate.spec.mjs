@@ -183,6 +183,27 @@ test('parseStartupDiagnostics：did not activate 要能归因到具体哪一行�
   assert.match(parsed.inactive[0].detail, /Cannot find module/)
 })
 
+test('parseStartupDiagnostics：级联受害者以 pending detail 出现在未激活列表里，同样可归因', () => {
+  // 实测形态（EDA 修复前的真实输出）：一个被禁用的行同时是某项服务的提供者，
+  // 依赖它的行就永远等不到服务 —— 宿主把**受害者**也放进 did not activate 列表，
+  // 但 detail 是 `pending (waiting for service: <svc>)` 而不是 import 失败。
+  //
+  // 这条抓的是"爆炸半径"：只看 `disabling` 会以为只有两个包有问题，而真正被拖垮的
+  // 是三个。注意它与 `pending` 判据**不是**同一件事 —— `pending` 盯的是宿主单独打印的
+  // `Plugins waiting for services (N):` 聚合行，那条行在实测中并未出现（pending=false）。
+  const real =
+    'dsh: warning: 1 plugin did not activate\n' +
+    'optional-schematic-easyeda (@deepseek-ai/dsh-plugin-eda-easyeda): pending (waiting for service: schematic)\n'
+  const parsed = parseStartupDiagnostics(real)
+  assert.equal(parsed.didNotActivate, true)
+  assert.equal(parsed.pending, false, '本形态下宿主没有打印聚合行，pending 应为 false')
+  assert.equal(parsed.inactive.length, 1)
+  assert.equal(parsed.inactive[0].rowId, 'optional-schematic-easyeda')
+  assert.equal(parsed.inactive[0].packageName, '@deepseek-ai/dsh-plugin-eda-easyeda')
+  assert.match(parsed.inactive[0].detail, /waiting for service: schematic/)
+  assert.deepEqual(parsed.denied, [], '级联受害者不是"被禁用"，不能混进 denied')
+})
+
 test('parseStartupDiagnostics：聚合行之前的同形状文本不算未激活（区间守卫）', () => {
   const parsed = parseStartupDiagnostics('noise (@scope/pkg): 不是启动故障\ndsh: MISSING_CREDENTIAL\n')
   assert.deepEqual(parsed.inactive, [])

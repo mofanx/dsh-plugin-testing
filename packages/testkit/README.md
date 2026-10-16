@@ -130,7 +130,7 @@ dsh-plugin-activate \
 npm test        # node --test "tests/**/*.spec.mjs"
 ```
 
-本包共 44 条用例（`home` 13 + `replay` 13 + `activate` 18）。其中 **10 条依赖真实 DSH 安装**（`home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条 + `activate.spec.mjs` 5 条）：真的启动 launcher，断言"世界"而不是插件的自述。找不到 launcher 时**逐条给出原因并跳过**（不是裸 `# SKIP`）；可用 `DSH_BIN` 指定其他安装。
+本包共 45 条用例（`home` 13 + `replay` 13 + `activate` 19）。其中 **10 条依赖真实 DSH 安装**（`home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条 + `activate.spec.mjs` 5 条）：真的启动 launcher，断言"世界"而不是插件的自述。找不到 launcher 时**逐条给出原因并跳过**（不是裸 `# SKIP`）；可用 `DSH_BIN` 指定其他安装。
 
 ### 测试支撑包必须与宿主同版本（一个真实的坑）
 

@@ -263,13 +263,29 @@ C060 降级正例、C060 未覆盖保持 error 的反例（三种不匹配形态
 
 **③ EDA 插件 A/B：v0.6 的修复在运行时真实生效**
 
-| | 修复前 `a2819a3` | 修复后 `9547271` |
+两侧都用**已构建**的检出复跑同一条命令（同宿主 `0.2.0-rc.2`、同平台），所以差异只可能来自插件代码：
+
+| | 修复前 `a2819a3` | 修复后 `9547271`（及当前 `c73b92f`） |
 |---|---|---|
-| 探针判定 | **失败** | **通过** |
+| 探针判定 | **失败**（exit 1） | **通过**（exit 0） |
 | 被运行时禁用的行 | **2 条**：`optional-schematic`、`optional-tool-schematic` | **0 条** |
-| 禁用原因 | peer `>=0.2.1-alpha.2` 与宿主 `0.2.0-rc.2` 不兼容 | — |
+| 禁用原因 | peer `>=0.2.1-alpha.2` 与宿主 `0.2.0-rc.2` 不兼容；诊断里明写 `Exact-version exemption: not active.` | — |
+| **受影响的挂载行** | **3 条**（见下） | **0 条** |
 | `did not activate` | true | false |
 | 终止状态 | `MISSING_CREDENTIAL`（已越过预检） | `MISSING_CREDENTIAL`（已越过预检） |
+
+**一个此前被低估的细节：真实爆炸半径是 3 行，不是 2 行。** 在同一份输出里还有第三条：
+
+```
+未激活的行  :
+  ✗ @deepseek-ai/dsh-plugin-eda-easyeda（row optional-schematic-easyeda）：pending (waiting for service: schematic)
+```
+
+它不是"又被禁用了"，而是**级联**：`optional-schematic` 正是 `schematic` 服务的提供者，它被禁用后，依赖该服务的 `optional-schematic-easyeda` 就永远等不到服务。也就是说**一个写错的 peer 范围连带拖垮了一个依赖它的插件**。
+
+这条也纠正了一个容易想当然的因果：**它是被「未激活的行」的可归因列表抓到的，不是被 `pending` 判据抓到的**。本次输出里 `启动诊断: didNotActivate=true pending=false` —— `pending` 为 false，因为宿主**没有**打印 `Plugins waiting for services (N):` 那条聚合行，而探针的 `pending` 判据盯的正是那条聚合行，是**另一条**独立信号。真正指出第三行的是 v0.8.1 才做的「`did not activate` 列表可归因」（`<rowId> (<packageName>): <detail>`）—— 在那之前这里只会有一句"1 plugin did not activate"，读者无从知道是谁。
+
+（顺带说明判据为何这样分工：`did not activate` 在**已有**禁用行时不再单独计为失败原因，否则每个禁用都会被重复计一次、`expectDisabled` 将永远无法通过；但没有禁用行时它就是"启动失败且兼容性预检解释不了"的信号。）
 
 复跑命令（不需要 EDA 客户端、不需要模型凭据）：
 
@@ -404,7 +420,7 @@ npm error Invalid name: ".dsh-host"
 
 ### 6. 用例数（最终）
 
-163 → **173**，全部通过、0 skip（本机有打包宿主）。其中 conformance 129、testkit 44。新增 10 条：`C067` 三类 + 语义钉死 + 作用域边界（5）、探针归因与区间守卫（2）、`inspectEntry` 入口解析（1）、"入口未构建"真实启动（1）、`resolveInstalledPackage` 的宿主优先解析（1）。规则码 35 → **36**；离线/需真实宿主的分界：**162 / 11**。
+163 → **174**，全部通过、0 skip（本机有打包宿主）。其中 conformance 129、testkit 45。新增 11 条：`C067` 三类 + 语义钉死 + 作用域边界（5）、探针归因与区间守卫（2）、`inspectEntry` 入口解析（1）、"入口未构建"真实启动（1）、`resolveInstalledPackage` 的宿主优先解析（1）、级联受害者（pending detail）的可归因（1）。规则码 35 → **36**；离线/需真实宿主的分界：**163 / 11**。
 
 ### 7. 最终结果：两条车道 × 两条宿主线全绿
 
