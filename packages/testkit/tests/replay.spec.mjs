@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 
 import { createTestHome, resolveInstalledPackage, testHomeArgs } from '../src/home.mjs'
@@ -107,13 +107,15 @@ function packageVersion(dir) {
 
 /**
  * The host-under-test version, by the single source the contract names:
- * `@deepseek-ai/dsh-app-boot`'s `version`. Derived from `DSH_BIN`
- * (`<root>/node_modules/@deepseek-ai/dsh/lib/bin.js` → `<root>`).
+ * `@deepseek-ai/dsh-app-boot`'s `version`.
+ *
+ * Derived from `DSH_BIN`, which is `<root>/node_modules/@deepseek-ai/dsh/lib/bin.js`
+ * — so `<root>/node_modules` is **three** levels up from its `dirname`.
  *
  * @returns {string}
  */
 function hostAppBootVersion() {
-  const hostRoot = process.env.DSH_HOST_NODE_MODULES ?? join(dirname(DSH_BIN), '..', '..')
+  const hostRoot = process.env.DSH_HOST_NODE_MODULES ?? join(dirname(DSH_BIN), '..', '..', '..')
   return packageVersion(join(hostRoot, '@deepseek-ai', 'dsh-app-boot'))
 }
 
@@ -311,6 +313,7 @@ test(
         testHomeArgs(home, { task: 'say hi' }),
       )
       if (!assertLaunched(t, result)) return
+      if (skipIfReplayHostMismatch(t, result.output)) return
       // v0 projections omit `version`; the codec needs an explicit integer.
       assert.match(result.output, /Session format version must be a non-negative safe integer/)
     } finally {
@@ -331,6 +334,7 @@ test(
         testHomeArgs(home, { task: 'say hi' }),
       )
       if (!assertLaunched(t, result)) return
+      if (skipIfReplayHostMismatch(t, result.output)) return
       // The committed record-suite files are session-snapshot fixtures, not
       // llm-replay scripts: they load, then report zero usable calls. Turning
       // that shortfall into an explicit error is the whole point — a silently
