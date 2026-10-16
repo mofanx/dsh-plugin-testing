@@ -45,6 +45,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import semver from 'semver'
+import { checkUsageAgainstSurface, scanUsedApis, surfaceUniverse } from './api-usage.mjs'
 import { isDshRuntimePeer } from './peer.mjs'
 import { prereleaseTuple, satisfies, satisfiesInstallTime } from './semver.mjs'
 import { severityOf } from './rules.mjs'
@@ -181,7 +182,11 @@ export function readDshPeers(packageDir) {
  * Derive the host-version claim set for one package.
  *
  * @param {string} packageDir
- * @param {{ candidates: string[], knownGaps?: Record<string, string> }} options
+ * @param {{
+ *   candidates: string[],
+ *   knownGaps?: Record<string, string>,
+ *   surfaces?: { hostVersion: string, surface: any, file: string }[]
+ * }} options
  * @returns {{
  *   packageDir: string, name: string, version: string | undefined,
  *   peers: Record<string, string>, hasDshPeers: boolean,
@@ -190,6 +195,7 @@ export function readDshPeers(packageDir) {
  *   acknowledgedGaps: string[],
  *   span: { min: string, max: string } | null,
  *   belowSpan: string[], aboveSpan: string[],
+ *   apiAvailability: any,
  *   findings: { code: string, severity: 'error' | 'warn', message: string }[]
  * }}
  */
@@ -286,6 +292,70 @@ export function deriveHostMatrix(packageDir, options) {
     })
   }
 
+  // ---------------------------------------------------------------------
+  // T18 — cross the declaration with what the code actually imports.
+  //
+  // The matrix above grades the *declaration*: it never looks at the plugin's
+  // own source, so it cannot notice that a version it admits has dropped a
+  // subpath or symbol the plugin imports. Recorded host surfaces close that gap
+  // without installing or booting anything.
+  //
+  // Coverage is deliberately partial and reported as such: a version in the span
+  // with no recorded surface is **未知**, never "fine". Saying "no surface, so no
+  // problem" would be the exact false green this pass exists to prevent.
+  // ---------------------------------------------------------------------
+  /** @type {any} */
+  let apiAvailability = null
+  if (options.surfaces !== undefined && options.surfaces.length > 0) {
+    const recorded = [...options.surfaces].sort((a, b) => semver.compare(a.hostVersion, b.hostVersion))
+    const usage = scanUsedApis(packageDir)
+    const universe = surfaceUniverse(recorded)
+    const byVersion = new Map(recorded.map((item) => [item.hostVersion, item]))
+    const inSpanVersions = rows.filter((row) => row.inSpan).map((row) => row.version)
+
+    const surfaceRows = inSpanVersions.map((version) => {
+      const surface = byVersion.get(version)
+      if (surface === undefined) return { version, covered: false, checked: 0, missing: [], outOfScope: [] }
+      const result = checkUsageAgainstSurface(usage, surface, universe)
+      return { version, covered: true, ...result }
+    })
+
+    const uncovered = surfaceRows.filter((row) => !row.covered).map((row) => row.version)
+    const withMissing = surfaceRows.filter((row) => row.covered && row.missing.length > 0)
+    const apiSafe = surfaceRows.filter((row) => row.covered && row.missing.length === 0).map((row) => row.version)
+
+    apiAvailability = {
+      files: usage.files,
+      truncated: usage.truncated,
+      used: usage.used,
+      unverifiable: usage.unverifiable,
+      outOfScope: surfaceRows.find((row) => row.covered)?.outOfScope ?? [],
+      recordedVersions: recorded.map((item) => item.hostVersion),
+      rows: surfaceRows,
+      uncovered,
+      apiSafe,
+    }
+
+    for (const row of withMissing) {
+      for (const miss of row.missing) {
+        const what =
+          miss.reason === 'noPackage'
+            ? `整个包都不在该宿主的 API 面里`
+            : miss.reason === 'noSubpath'
+              ? `子路径 ${miss.subpath} 不存在`
+              : `子路径 ${miss.subpath} 里已没有符号 ${miss.symbols.join(', ')}`
+        findings.push({
+          code: 'DSH-C069',
+          severity: severityOf('DSH-C069'),
+          message:
+            `${name} 声明覆盖 ${row.version}，但该宿主的 API 面里${what}：` +
+            `插件发布入口引用了 ${miss.package}${miss.reason === 'noSubpath' ? '' : ` [${miss.subpath}]`}。` +
+            `该版本上插件会在 import 阶段直接失败 —— 收窄 peer 范围把 ${row.version} 排除，或改掉这处引用`,
+        })
+      }
+    }
+  }
+
   return {
     packageDir,
     name,
@@ -301,6 +371,7 @@ export function deriveHostMatrix(packageDir, options) {
     span,
     belowSpan,
     aboveSpan,
+    apiAvailability,
     findings,
   }
 }

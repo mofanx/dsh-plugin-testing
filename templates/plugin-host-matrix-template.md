@@ -10,23 +10,27 @@
 
 ```bash
 node packages/conformance/src/cli-host-matrix.mjs <packageDir...> \
-  --candidates fixtures/host-versions.published.json
+  --candidates fixtures/host-versions.published.json \
+  --surfaces fixtures/host-surfaces
 ```
 
-它不装宿主、不联网，几秒给出"哪些已发布版本被声明接纳"，并暴露两类**光看单宿主发现不了**
-的缺陷：区间**之内**却没人接纳的**空洞**（`C068`，error），以及运行时放行但安装期会被
-npm/pnpm 拒绝的**分歧**（`C067`，warn）。
+它不装宿主、不联网，几秒给出"哪些已发布版本被声明接纳"，并暴露三类**光看单宿主发现不了**
+的缺陷：区间**之内**却没人接纳的**空洞**（`C068`，error）、运行时放行但安装期会被
+npm/pnpm 拒绝的**分歧**（`C067`，warn），以及**声明覆盖了、但代码真正引用的接口在那版已经
+没了**（`C069`，error —— 这一条要 `--surfaces` 指向已记录的宿主 API 面才生效）。
 
-三层的关系是**递进**的，不要混为一谈：
+四层的关系是**递进**的，不要混为一谈：
 
 | 层 | 问题 | 成本 | 本表角色 |
 |---|---|---|---|
 | **声明覆盖** | 范围在哪些版本上求值为真 | 0（纯 semver） | 决定**该挑哪几格**去实测 |
+| **接口可用** | 该版本上，代码真正引用的接口**还在不在** | 0（读已记录的 API 面） | 先排除"加载即失败"的格子 |
 | **实测通过** | 在该版本上真的能装载/工作 | 高（装 + 启，约 1 分钟/格） | **本表填的就是这一层** |
 | **未验证** | 其余全部 | — | 留白，**不得**因为"声明覆盖了"就填 🟢 |
 
 **最容易犯的错**：把矩阵算出的覆盖集**直接**当成 🟢 填进来。声明覆盖只说明"作者断言支持"，
-不说明"真的能用" —— 把断言当证据正是本套基建要防的假绿。
+不说明"真的能用"；接口可用也只说明"import 得到"，不说明"跑得起来" —— 把**任何一层**当成
+证据，都是本套基建要防的假绿。**没有记录 API 面的版本一律算未知**，与本表的 ⚪ 同义。
 
 ## 怎么读
 
@@ -67,6 +71,11 @@ node packages/conformance/src/run-all.mjs --config <该宿主×该插件的配�
 # 宿主 API 基线（每宿主一份，供矩阵 diff）
 node packages/conformance/src/cli-api.mjs --host <安装目录>/node_modules \
   --baseline api-baseline.<宿主版本>.json --write
+
+# 宿主 API 面（按版本记录，供 `--surfaces` 做接口可用性核对；产物自带 hostVersion）
+#   注意依赖版本要写精确值：^0.2.1-alpha.2 会解析到同元组最新的 alpha.4
+node packages/conformance/src/cli-api.mjs --host <安装目录>/node_modules \
+  --baseline fixtures/host-surfaces/surface-<宿主版本>.json --write
 ```
 
 ## 维护约定

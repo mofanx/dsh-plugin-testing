@@ -13,6 +13,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { collectApiSurface, diffApiSurface } from './api-surface.mjs'
+import { resolveDshVersion } from './peer.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DEFAULT_CONFIG = join(HERE, '..', 'conformance.config.json')
@@ -67,9 +68,17 @@ const current = collectApiSurface(host)
 const count = Object.keys(current.packages).length
 
 if (opts.write) {
-  writeFileSync(baselinePath, `${JSON.stringify(current, null, 2)}\n`)
+  // Record which DSH version this surface belongs to. Without it the artifact is
+  // not self-describing and a consumer has to infer the version from the file
+  // name — the same "provenance must travel with the data" rule as the
+  // candidate-version list.
+  const hostVersion = resolveDshVersion(
+    Object.fromEntries(Object.entries(current.packages).map(([name, pkg]) => [name, pkg.version])),
+  )
+  writeFileSync(baselinePath, `${JSON.stringify({ hostVersion, ...current }, null, 2)}\n`)
   console.log(`已写入 API 基线: ${baselinePath}`)
   console.log(`  宿主: ${host}`)
+  console.log(`  宿主版本: ${hostVersion ?? '（无法确定）'}`)
   console.log(`  包数: ${count}`)
   process.exit(0)
 }
@@ -111,7 +120,26 @@ for (const entry of diff.entries) {
 
 console.log('')
 if (diff.breaking) {
-  console.error(`❌ 检出破坏性变更：${diff.entries.length} 个包受影响。插件可能引用了已消失的子路径或符号。`)
+  // Count what actually broke, not how many packages have *any* entry. Reporting
+  // `entries.length` here overstated the alarm badly in practice: a real
+  // rc.2 -> alpha.1 run gave 289 "受影响" packages of which only 40 had a
+  // removed subpath or symbol — the other 245 were version bumps with an
+  // identical surface. An alarm number that is 7x too big trains people to
+  // ignore it, which is the failure mode this whole repository exists to stop.
+  const breakingEntries = diff.entries.filter(
+    (e) => e.kind === 'removedPackage' || (e.removedSubpaths?.length ?? 0) > 0 || (e.removedSymbols?.length ?? 0) > 0,
+  )
+  const removedPackages = breakingEntries.filter((e) => e.kind === 'removedPackage').length
+  const removedSubpaths = breakingEntries.reduce((n, e) => n + (e.removedSubpaths?.length ?? 0), 0)
+  const removedSymbols = breakingEntries.reduce((n, e) => n + (e.removedSymbols?.length ?? 0), 0)
+  const benign = diff.entries.length - breakingEntries.length
+  console.error(
+    `❌ 检出破坏性变更：${breakingEntries.length} 个包有移除` +
+      `（子路径 ${removedSubpaths} 个、符号 ${removedSymbols} 个` +
+      `${removedPackages > 0 ? `、整包移除 ${removedPackages} 个` : ''}）` +
+      `；另有 ${benign} 个包仅版本变化或只有新增。`,
+  )
+  console.error('   插件可能引用了已消失的子路径或符号。')
   process.exit(1)
 }
 console.log(`✅ 无破坏性变更（${diff.entries.length} 个包有非破坏性变化）`)

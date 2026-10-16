@@ -71,7 +71,17 @@ export const RULES = {
   // neighbours — an error, same class as C060.
   'DSH-C068': { severity: 'error', title: '声明的宿主范围存在空洞：区间内已发布的版本不被接纳', task: 'T17' },
 
-  // --- gate configuration (T13) -----------------------------------------  // A gate that checks nothing must never look like a gate that passed. These
+  // --- host API availability by version (T18) ---------------------------
+  // The peer contract describes the *declaration*; only the plugin's own imports
+  // describe the *need*. A plugin can satisfy every peer range and still import a
+  // subpath or symbol that no longer exists (the `./invariant` removal in the
+  // 0.2.1 line is the standing example). Evaluated against recorded host surfaces,
+  // so it needs no install and no boot — an error, because on that version the
+  // plugin fails at import time.
+  'DSH-C069': { severity: 'error', title: '声明的覆盖版本缺少插件实际引用的宿主 API', task: 'T18' },
+
+  // --- gate configuration (T13) -----------------------------------------
+  // A gate that checks nothing must never look like a gate that passed. These
   // two codes make a misconfigured run a loud failure instead of a vacuous green.
   'DSH-C070': {
     severity: 'error',
@@ -120,6 +130,13 @@ export const CONFIG_RULE_CODES = Object.freeze(
 export const MATRIX_RULE_CODES = Object.freeze(
   Object.entries(RULES)
     .filter(([, rule]) => rule.task === 'T17')
+    .map(([code]) => code),
+)
+
+/** Rules implemented by the T18 host-API-availability pass. */
+export const API_USAGE_RULE_CODES = Object.freeze(
+  Object.entries(RULES)
+    .filter(([, rule]) => rule.task === 'T18')
     .map(([code]) => code),
 )
 

@@ -1,0 +1,20 @@
+{
+  "hostVersion": "1.0.0",
+  "packages": {
+    "@deepseek-ai/dsh-llm": {
+      "version": "1.0.0",
+      "subpaths": [".", "./invariant", "./src/*", "./package.json"],
+      "symbols": {
+        ".": ["HarnessError"],
+        "./invariant": ["checkInvariant"]
+      }
+    },
+    "@deepseek-ai/dsh-tools": {
+      "version": "1.0.0",
+      "subpaths": [".", "./package.json"],
+      "symbols": {
+        ".": ["defineTool", "toolResult"]
+      }
+    }
+  }
+}

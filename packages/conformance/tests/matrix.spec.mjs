@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import { deriveHostMatrix, readCandidateList, readDshPeers } from '../src/matrix.mjs'
+import { MATRIX_RULE_CODES } from '../src/rules.mjs'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const fixtures = resolve(here, '..', '..', '..', 'fixtures', 'host-matrix')
@@ -327,3 +328,25 @@ test('真实清单与 dist-tags 记录一致（清单不得与生成时的事实
   assert.ok(raw.versions.includes(raw.distTagsAtGeneration.alpha))
   assert.ok(raw.note.includes('不得联网'), '清单必须写明它不得在检查时联网获取')
 })
+
+//#endregion
+
+//#region 完备性
+
+test('T17 覆盖了 rules.mjs 中声明的全部 T17 规则码', () => {
+  // 与 T12 的完备性用例同一纪律：规则码必须真的被触发过，
+  // 否则"通过"可能只是"这条规则从来没跑过"。
+  const exercised = new Set()
+  const sources = [
+    [join(fixtures, 'hole'), { candidates: PUBLISHED }],
+    [join(fixtures, 'divergence'), { candidates: PUBLISHED }],
+    [join(fixtures, 'hole'), { candidates: PUBLISHED, knownGaps: { '0.2.1-alpha.2': '用例：有意排除' } }],
+  ]
+  for (const [dir, options] of sources) {
+    for (const finding of deriveHostMatrix(dir, options).findings) exercised.add(finding.code)
+  }
+  const missing = MATRIX_RULE_CODES.filter((code) => !exercised.has(code))
+  assert.deepEqual(missing, [], `以下规则码未被任何用例触发：${missing.join(', ')}`)
+})
+
+//#endregion

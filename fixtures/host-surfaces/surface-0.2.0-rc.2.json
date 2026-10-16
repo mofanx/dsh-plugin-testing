@@ -1,0 +1,5814 @@
+{
+  "hostVersion": "0.2.0-rc.2",
+  "packages": {
+    "@deepseek-ai/cordis": {
+      "version": "4.0.4",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Context",
+          "CordisError",
+          "DisposableList",
+          "EventsService",
+          "Fiber",
+          "Inject",
+          "Logger",
+          "LoggerService",
+          "RegistryService",
+          "Service",
+          "ValidationError",
+          "buildOuterStack",
+          "c16",
+          "c256",
+          "composeError",
+          "createCallable",
+          "defaultFormatters",
+          "getPropertyDescriptor",
+          "getTraceable",
+          "isBailed",
+          "isConstructor",
+          "isObject",
+          "joinPrototype",
+          "resolveConfig",
+          "symbols",
+          "withProps"
+        ]
+      }
+    },
+    "@deepseek-ai/cordis-plugin-group": {
+      "version": "1.0.4",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/cordis-plugin-include": {
+      "version": "1.0.9",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Include",
+          "applyEntryPatches",
+          "default",
+          "entryListSchema"
+        ]
+      }
+    },
+    "@deepseek-ai/cordis-plugin-loader": {
+      "version": "1.0.5",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Entry",
+          "EntryGroup",
+          "EntryTree",
+          "GlobalRealm",
+          "Group",
+          "Loader",
+          "LocalRealm",
+          "ModuleLoader",
+          "Realm",
+          "default",
+          "evaluate",
+          "interpolate",
+          "isJsExpr"
+        ]
+      }
+    },
+    "@deepseek-ai/cordis-plugin-timer": {
+      "version": "1.1.6",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "TimerService",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/cosmokit": {
+      "version": "1.8.5",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Binary",
+          "Time",
+          "arrayBufferToBase64",
+          "arrayBufferToHex",
+          "base64ToArrayBuffer",
+          "camelCase",
+          "camelize",
+          "capitalize",
+          "clone",
+          "contain",
+          "createVolatile",
+          "deduplicate",
+          "deepEqual",
+          "defineProperty",
+          "difference",
+          "filterKeys",
+          "formatProperty",
+          "hexToArrayBuffer",
+          "hyphenate",
+          "intersection",
+          "is",
+          "isNonNullable",
+          "isNullable",
+          "isPlainObject",
+          "isVolatile",
+          "makeArray",
+          "mapValues",
+          "noop",
+          "omit",
+          "paramCase",
+          "pick",
+          "remove",
+          "sanitize",
+          "snakeCase",
+          "trimSlash",
+          "uncapitalize",
+          "union",
+          "updateVolatile",
+          "valueMap",
+          "volatileEntries"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        "./lib/*",
+        "./package.json",
+        "./profile-boot"
+      ],
+      "symbols": {
+        "./profile-boot": [
+          "INSTALL_ANCHOR",
+          "PROFILE_ROOT_FILENAME",
+          "homePatchPath",
+          "initializeProfileFromDefault",
+          "prepareProfile",
+          "runProfile"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-acp": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-acp-app": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ACP_APP_STARTUP_SERVICE",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "AgentRegistry",
+          "agentCarrier",
+          "agentEvents",
+          "assembleContextFor",
+          "default",
+          "emitAgentEvent",
+          "foldConsumedWork",
+          "installModelSelection"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent-default-model": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "AgentDefaultModelConfig",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent-instructions": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "discoverBaselineInstructionFiles",
+          "inject",
+          "loadBaselineInstructions",
+          "name",
+          "renderAgentInstructions"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent-loop": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "AgentLoop",
+          "CONFIGURED_AGENT_IDENTITIES_KEY",
+          "DEFAULT_MAX_PARALLEL_TOOL_CALLS",
+          "default",
+          "turnBoundaryProjectionDefinition"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent-preset": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent-preset-registry": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./display",
+        "./invariant",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "AgentPresetRegistry",
+          "agentPresetProjectionDefinition",
+          "auditRows",
+          "default",
+          "entryListProblem",
+          "leakedServices",
+          "livePresetMounts",
+          "serviceForAgent",
+          "standingMountFor"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-agent-tool-presentation": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-anonymous-user-id": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ANONYMOUS_USER_ID_FILE_NAME",
+          "getOrCreateAnonymousUserId"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-account-controller": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "AccountController",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-gateway": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./stream-protocol",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "TypertGatewayError",
+          "TypertGatewayService",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-job-controller": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "JobController",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-remotes": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "API_REMOTE_FORWARDED_EVENTS",
+          "apply",
+          "inject"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-session-controller": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./remote-events",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "ApiSessionNotFound",
+          "SessionController",
+          "SessionFileReferences",
+          "SessionSkillCatalog",
+          "buildModelCatalog",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-settings-controller": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "CredentialsController",
+          "SettingsController",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-terminal-controller": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "TerminalController",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-workspace-controller": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./default-workspace",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "DirectoryPickerController",
+          "WorkspaceController",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-api-workspace-files": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "WorkspaceFiles",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-app-boot": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./worker/profile-resolution-bootstrap"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_PROFILE_BUNDLES",
+          "FAIL_LOUD_RELEASE_TIMEOUT_MS",
+          "HARNESS_SOURCE_SECTION",
+          "LOADER_EXPRESSION_SCHEMA",
+          "OPTIONAL_BUNDLES",
+          "PROFILES_DIR",
+          "PROFILE_COMPATIBILITY_FILENAME",
+          "PROFILE_PATCH_FILENAME",
+          "PROFILE_TEMPLATES",
+          "PluginPackages",
+          "StartupError",
+          "addHarnessSourceSection",
+          "auditStartupEntries",
+          "boot",
+          "bundlePatchFiles",
+          "bundlePatchPaths",
+          "composeEntries",
+          "createConfigProjector",
+          "createRuntimeResolution",
+          "evaluatePluginCompatibility",
+          "generateConfigSchema",
+          "getDshRuntimeVersion",
+          "initProfile",
+          "installFailLoud",
+          "isNativeConfigSchema",
+          "loadEnv",
+          "loadLayeredEnv",
+          "loadOptionalPatches",
+          "loadOverlayPatches",
+          "loadProfile",
+          "loadProfileDirectory",
+          "mountRootInclude",
+          "pluginCompatibilityWarning",
+          "prepareProfileEntries",
+          "prepareProfilePatches",
+          "readPluginMeta",
+          "readProfileCompatibility",
+          "readProfileManifest",
+          "readProfilePatches",
+          "readProfilePlugins",
+          "readProfileVersionExemptions",
+          "reconcileProfilePatches",
+          "reconcileProfilePlugins",
+          "removeLinkProjections",
+          "renderConfigDump",
+          "reportSkippedBundles",
+          "resolveBundleDir",
+          "resolveConfigPath",
+          "resolveProfileDir",
+          "resolveTelemetryPatch",
+          "sanitizeProfile",
+          "setProfileVersionExemption",
+          "writeProfileBundles",
+          "writeProfileManifest"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-atomic-write": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "withFileLock",
+          "writeFileAtomic"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-attachment": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "AttachmentError",
+          "AttachmentId",
+          "AttachmentStore",
+          "ImageVariantId",
+          "admitEncodedFile",
+          "admitEncodedImages",
+          "default",
+          "isAttachmentError",
+          "isImageAdmissionError",
+          "longEdgeDimensions",
+          "requestImageDimensions"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-attachment-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_IMAGE_COMPRESSION_CONCURRENCY",
+          "DEFAULT_MAX_IMAGES_PER_MESSAGE",
+          "DEFAULT_MAX_IMAGE_BYTES",
+          "DEFAULT_MAX_IMAGE_DIMENSION",
+          "DEFAULT_MAX_IMAGE_PIXELS",
+          "DEFAULT_MAX_MESSAGE_IMAGE_BYTES",
+          "DEFAULT_NORMALIZED_IMAGE_MAX_BYTES",
+          "DEFAULT_NORMALIZED_IMAGE_MAX_DIMENSION",
+          "DEFAULT_NORMALIZED_IMAGE_MAX_PIXELS",
+          "LocalAttachmentStore",
+          "MAX_IMAGE_COMPRESSION_CONCURRENCY",
+          "canPassThroughNormalization",
+          "commitPreparedImageFile",
+          "default",
+          "normalizeImage",
+          "prepareImageFile",
+          "readImageFile",
+          "readRequestImageFile",
+          "requestImageVariantId",
+          "saveImageFile",
+          "validateImageFile"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-authorization": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "AuthorizationDeclinedError",
+          "AuthorizationError",
+          "AuthorizationService",
+          "default"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-base": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-bash-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ENV_OVERRIDES",
+          "LocalBashExecutor",
+          "assertServiceableBashConfig",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-bash-sandbox": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SandboxBashExecutor",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-brand": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "brandNumber",
+          "brandString"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-chunked-list": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "appendChunkedList",
+          "chunkedListSchema",
+          "iterateChunkedList"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-connection": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "API_PATH",
+          "Config",
+          "HostConnectionService",
+          "OperatorPeer",
+          "RpcId",
+          "apply",
+          "clientRequestSchema",
+          "inject",
+          "name",
+          "rpcErrorSchema",
+          "rpcIdSchema",
+          "rpcMessageSchema",
+          "rpcResultSchema",
+          "serverResponseSchema",
+          "transportError"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-file-upload": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "FileUploads",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-hmr": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "EVENTS_ENDPOINT",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-locale": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "LOCALE_IDS",
+          "LOCALE_PREFERENCE_FIELD",
+          "LOCALE_SETTINGS_NAMESPACE",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-modules": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ClientModuleRegistry",
+          "bootInjections",
+          "default",
+          "orderByModuleGraph",
+          "stripClientSuffix"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-product-analytics": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-resources": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-shortcuts": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./protocol",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply"
+        ],
+        "./protocol": [
+          "ShortcutPersistence",
+          "bindingIssue",
+          "bindingKey",
+          "editShortcutDocument",
+          "effectiveShortcuts",
+          "initialShortcutConfig",
+          "isWebBindingAllowed",
+          "normalizeBinding",
+          "overlappingBindings",
+          "parseBinding",
+          "parseShortcutDefinitions",
+          "parseShortcutDocument",
+          "parseShortcutEdit",
+          "presentBinding",
+          "resolveShortcutDefault"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-store": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "createSnapshotStore",
+          "defineStore",
+          "notifySubscribers",
+          "shallowEqual"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-agent-preset": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-approval": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-attachment": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-brand-official": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-chat": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "CHAT_SETTINGS_NAMESPACE",
+          "Config",
+          "DEFAULT_TRANSCRIPT_VIEW_MODE",
+          "LEGACY_EXPANDED_TRANSCRIPT_VIEW_MODE",
+          "LEGACY_TRANSCRIPT_VIEW_MODE",
+          "TRANSCRIPT_VIEW_FIELD",
+          "TRANSCRIPT_VIEW_MODES",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-commands": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-conversation": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BUSY_ENTER_BEHAVIORS",
+          "BUSY_ENTER_FIELD",
+          "CONVERSATION_SETTINGS_NAMESPACE",
+          "Config",
+          "DEFAULT_BUSY_ENTER_BEHAVIOR",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-cordis": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-deliverables": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-directory-picker-browse": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-directory-picker-native": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-goal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-input-trigger": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-jobs": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-layout": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-message-feedback": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-model-selection": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-open-in-app": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-permission-presets": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-plan": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-plugin-manager": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-primitives": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BrandWordmark",
+          "Button",
+          "CODE_HIGHLIGHT_EXTENSIONS",
+          "Checkbox",
+          "CodeBlock",
+          "ConnectionIndicator",
+          "DEFAULT_DIFF_MAX_LINES",
+          "DEFAULT_READ_MAX_LINES",
+          "DEFAULT_SEARCH_MAX_LINES",
+          "DEFAULT_TERMINAL_MAX_LINES",
+          "DiffBlock",
+          "DisclosureRow",
+          "FISH_LOGO_PATH",
+          "FISH_LOGO_VIEWBOX",
+          "FileTypeIcon",
+          "FishLogo",
+          "GuideArtworkBrowser",
+          "GuideArtworkFiles",
+          "HoverCard",
+          "ICON_MEDIUM_STROKE",
+          "ICON_REGULAR_STROKE",
+          "IconAgentPresetOutlineMedium",
+          "IconAgentPresetOutlineRegular",
+          "IconAlarmClockOutlineMedium",
+          "IconAlarmClockOutlineRegular",
+          "IconApiOutlineMedium",
+          "IconApiOutlineRegular",
+          "IconArchiveCheckOutlineMedium",
+          "IconArchiveCheckOutlineRegular",
+          "IconArchiveOffOutlineMedium",
+          "IconArchiveOffOutlineRegular",
+          "IconArchiveOutlineMedium",
+          "IconArchiveOutlineRegular",
+          "IconBranchOutlineMedium",
+          "IconBranchOutlineRegular",
+          "IconBrowseOutlineMedium",
+          "IconBrowseOutlineRegular",
+          "IconCheckCircleFillMedium",
+          "IconCheckCircleFillRegular",
+          "IconCheckCircleOutlineMedium",
+          "IconCheckCircleOutlineRegular",
+          "IconCheckOutlineMedium",
+          "IconCheckOutlineRegular",
+          "IconChecklistOutlineMedium",
+          "IconChecklistOutlineRegular",
+          "IconChevronDownOutlineMedium",
+          "IconChevronDownOutlineRegular",
+          "IconChevronLeftOutlineMedium",
+          "IconChevronLeftOutlineRegular",
+          "IconChevronRightOutlineMedium",
+          "IconChevronRightOutlineRegular",
+          "IconChevronUpOutlineMedium",
+          "IconChevronUpOutlineRegular",
+          "IconChevronsUpDownOutlineMedium",
+          "IconChevronsUpDownOutlineRegular",
+          "IconClockOutlineMedium",
+          "IconClockOutlineRegular",
+          "IconCloseCircleFillMedium",
+          "IconCloseCircleFillRegular",
+          "IconCloseFillMedium",
+          "IconCloseFillRegular",
+          "IconCloseOutlineMedium",
+          "IconCloseOutlineRegular",
+          "IconCodeOutlineMedium",
+          "IconCodeOutlineRegular",
+          "IconCompactOutlineMedium",
+          "IconCompactOutlineRegular",
+          "IconCompareSplitOutlineMedium",
+          "IconCompareSplitOutlineRegular",
+          "IconContextInjectionOutlineMedium",
+          "IconContextInjectionOutlineRegular",
+          "IconCopyOutlineMedium",
+          "IconCopyOutlineRegular",
+          "IconCordisPluginOutlineMedium",
+          "IconCordisPluginOutlineRegular",
+          "IconDarkOutlineMedium",
+          "IconDarkOutlineRegular",
+          "IconDataOutlineMedium",
+          "IconDataOutlineRegular",
+          "IconDatabaseOutlineMedium",
+          "IconDatabaseOutlineRegular",
+          "IconDeliverDocMedium",
+          "IconDeliverDocRegular",
+          "IconDislikeFillMedium",
+          "IconDislikeFillRegular",
+          "IconDislikeOutlineMedium",
+          "IconDislikeOutlineRegular",
+          "IconDownloadOutlineMedium",
+          "IconDownloadOutlineRegular",
+          "IconEditOutlineMedium",
+          "IconEditOutlineRegular",
+          "IconEllipsisOutlineMedium",
+          "IconEllipsisOutlineRegular",
+          "IconEnhanceOutlineMedium",
+          "IconEnhanceOutlineRegular",
+          "IconFlatListOutlineMedium",
+          "IconFlatListOutlineRegular",
+          "IconFolderCloseMedium",
+          "IconFolderCloseRegular",
+          "IconFolderOpenMedium",
+          "IconFolderOpenOutlineMedium",
+          "IconFolderOpenOutlineRegular",
+          "IconFolderOpenRegular",
+          "IconFollowsystemOutlineMedium",
+          "IconFollowsystemOutlineRegular",
+          "IconFullscreenOutlineMedium",
+          "IconFullscreenOutlineRegular",
+          "IconGaugeOutlineMedium",
+          "IconGaugeOutlineRegular",
+          "IconGlobeOutlineMedium",
+          "IconGlobeOutlineRegular",
+          "IconGoalOutlineMedium",
+          "IconGoalOutlineRegular",
+          "IconInfoOutlineMedium",
+          "IconInfoOutlineRegular",
+          "IconInspectOutlineMedium",
+          "IconInspectOutlineRegular",
+          "IconLightOutlineMedium",
+          "IconLightOutlineRegular",
+          "IconLikeFillMedium",
+          "IconLikeFillRegular",
+          "IconLikeOutlineMedium",
+          "IconLikeOutlineRegular",
+          "IconLinkOutlineMedium",
+          "IconLinkOutlineRegular",
+          "IconListPenOutlineMedium",
+          "IconListPenOutlineRegular",
+          "IconLoadingOutlineMedium",
+          "IconLoadingOutlineRegular",
+          "IconMicrophoneOutlineMedium",
+          "IconMicrophoneOutlineRegular",
+          "IconNewChatOutlineMedium",
+          "IconNewChatOutlineRegular",
+          "IconNowrapFillMedium",
+          "IconNowrapFillRegular",
+          "IconPanelLeftOutlineMedium",
+          "IconPanelLeftOutlineRegular",
+          "IconPaperPlaneOutlineMedium",
+          "IconPaperPlaneOutlineRegular",
+          "IconPaperclipOutlineMedium",
+          "IconPaperclipOutlineRegular",
+          "IconPauseOutlineMedium",
+          "IconPauseOutlineRegular",
+          "IconPersonalizationOutlineMedium",
+          "IconPersonalizationOutlineRegular",
+          "IconPinFillMedium",
+          "IconPinFillRegular",
+          "IconPinOutlineMedium",
+          "IconPinOutlineRegular",
+          "IconPlanOutlineMedium",
+          "IconPlanOutlineRegular",
+          "IconPlayOutlineMedium",
+          "IconPlayOutlineRegular",
+          "IconPluginPinwheelOutlineMedium",
+          "IconPluginPinwheelOutlineRegular",
+          "IconPlusOutlineMedium",
+          "IconPlusOutlineRegular",
+          "IconProjectAddOutlineMedium",
+          "IconProjectAddOutlineRegular",
+          "IconQuestionOutlineMedium",
+          "IconQuestionOutlineRegular",
+          "IconQueueOutlineMedium",
+          "IconQueueOutlineRegular",
+          "IconRefreshOutlineMedium",
+          "IconRefreshOutlineRegular",
+          "IconRightUpOutlineMedium",
+          "IconRightUpOutlineRegular",
+          "IconSearchOutlineMedium",
+          "IconSearchOutlineRegular",
+          "IconSendOutlineMedium",
+          "IconSendOutlineRegular",
+          "IconSettingsOutlineMedium",
+          "IconSettingsOutlineRegular",
+          "IconShareOutlineMedium",
+          "IconShareOutlineRegular",
+          "IconShieldOutlineMedium",
+          "IconShieldOutlineRegular",
+          "IconSkillOutlineMedium",
+          "IconSkillOutlineRegular",
+          "IconSlidersTwoOutlineMedium",
+          "IconSlidersTwoOutlineRegular",
+          "IconSparkleMedium",
+          "IconSparkleRegular",
+          "IconStopFillMedium",
+          "IconStopFillRegular",
+          "IconThinkOutlineMedium",
+          "IconThinkOutlineRegular",
+          "IconTrashOutlineMedium",
+          "IconTrashOutlineRegular",
+          "IconTreeCornerMedium",
+          "IconTreeCornerRegular",
+          "IconTriangleRightFillMedium",
+          "IconTriangleRightFillRegular",
+          "IconUnarchiveOutlineMedium",
+          "IconUnarchiveOutlineRegular",
+          "IconUserOutlineMedium",
+          "IconUserOutlineRegular",
+          "IconUsersOutlineMedium",
+          "IconUsersOutlineRegular",
+          "IconWarningOutlineMedium",
+          "IconWarningOutlineRegular",
+          "IconWarningTriangleOutlineMedium",
+          "IconWarningTriangleOutlineRegular",
+          "IconWorkspaceTreeOutlineMedium",
+          "IconWorkspaceTreeOutlineRegular",
+          "IconWrapFillMedium",
+          "IconWrapFillRegular",
+          "IconWrapLinesOutlineMedium",
+          "IconWrapLinesOutlineRegular",
+          "ImageLightbox",
+          "Input",
+          "JsonBlock",
+          "JsonTree",
+          "LinkIconMedium",
+          "LinkIconRegular",
+          "MarkdownDelegateProvider",
+          "MarkdownText",
+          "Menu",
+          "MenuGroup",
+          "MenuItemButton",
+          "MenuSurface",
+          "Modal",
+          "PathLabel",
+          "PermissionIconFullAccessMedium",
+          "PermissionIconFullAccessRegular",
+          "PermissionIconReadOnlyMedium",
+          "PermissionIconReadOnlyRegular",
+          "PermissionIconWorkspaceWriteMedium",
+          "PermissionIconWorkspaceWriteRegular",
+          "Pill",
+          "PluginArtworkDefault",
+          "PluginArtworkLoop",
+          "PluginArtworkSearch",
+          "PluginArtworkSubagent",
+          "PluginArtworkTerminal",
+          "ReadBlock",
+          "ReferenceIconMedium",
+          "ReferenceIconRegular",
+          "RiskConfirmation",
+          "SHIELD_OUTLINE_PATH",
+          "SearchBlock",
+          "SegmentedControl",
+          "SegmentedTabs",
+          "SettingsForm",
+          "SettingsFormModel",
+          "SettingsSecretField",
+          "SettingsValueField",
+          "ShortcutKeys",
+          "StateDot",
+          "Switch",
+          "Tag",
+          "TerminalBlock",
+          "TextShimmer",
+          "Toast",
+          "Tooltip",
+          "WebBlock",
+          "classifyFileType",
+          "classifyLinkPath",
+          "closeTopModal",
+          "diffTotals",
+          "extractMarkdownPlainText",
+          "fileExtension",
+          "fileSizeText",
+          "focusWithoutRing",
+          "isBehindModal",
+          "isDarwinDesktop",
+          "languageForPath",
+          "modalSelector",
+          "observeComposition",
+          "observeStickyMenuGroups",
+          "pointerModality",
+          "projectUserText",
+          "rankByName",
+          "relativeTime",
+          "settingsNumberField",
+          "settingsTextField",
+          "useAnchoredMaxHeight",
+          "useAnchoredPosition",
+          "useCodeHighlighter",
+          "useDismissOnOutsidePointer",
+          "useModalLayer",
+          "writeClipboard"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-reference": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-renderer": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-schedule": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-session": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-account": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-agent-loop": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-general": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-models": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-plugin-inventory": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-plugins": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-session-log": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-shell": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-subagent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-settings-web-search": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-shortcuts": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-sidebar": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-sidebar-browser": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-sidebar-documentpreview": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-sidebar-files": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-sidebar-right": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-sidebar-terminal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-skill": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-slots": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SlotCore",
+          "SlotOwnershipError",
+          "StaleAuthorizationError",
+          "resolveSlotLabel",
+          "standardHookPropName"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-subagent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-theme": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./brand-font.css",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEFAULT_FONT_SIZE",
+          "DEFAULT_PREFERENCE",
+          "FONT_SIZE_FIELD",
+          "FONT_SIZE_MAX",
+          "FONT_SIZE_MIN",
+          "THEME_PREFERENCES",
+          "THEME_PREFERENCE_FIELD",
+          "THEME_SETTINGS_NAMESPACE",
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-tool": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-trajectory": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-user-questions": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-workflow-run": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-client-ui-workspace": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-cmdline": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "exitOnStdinEnd",
+          "internals",
+          "parseCmdline",
+          "provideCmdline"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-command-compact": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-command-feedback": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "FEEDBACK_CATEGORIES",
+          "SessionFeedbackService",
+          "apply",
+          "inject",
+          "name",
+          "recordFeedback"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-command-goal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-commands": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./brand",
+        "./invariant",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "CommandDefinitionId",
+          "CommandId",
+          "CommandRuntime",
+          "default",
+          "name",
+          "parseCommand"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-compaction": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./checkpoint",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "CompactionEngine",
+          "CompactionId",
+          "ManualCompactionError",
+          "compactCheckpointSource",
+          "default",
+          "isCompactCheckpointSource",
+          "toolPairingBalancedAfter",
+          "toolPairingBalancedBefore"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-compaction-basic": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BasicCompactionEngine",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-compaction-image-offload": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./projection"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULTS",
+          "PRUNE_MARKER",
+          "ToolResultPruner",
+          "codePointLength",
+          "default",
+          "resolveConfig"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-config-editor": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ConfigEditor",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-cordis-client-runner": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-cordis-host-runner": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "ApprovalRequestId",
+          "CordisDynamicPackageId",
+          "CordisDynamicPluginId",
+          "CordisDynamicPluginRunId",
+          "CordisInspectRegistryService",
+          "DynamicCordisRunnerService",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-credentials": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "CredentialProvider",
+          "credentialKey",
+          "credentialKeyId",
+          "credentialKeyScope",
+          "credentialRef",
+          "default",
+          "isCredentialKeySegment",
+          "isCredentialRefName",
+          "parseCredentialKey"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-credentials-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "CREDENTIALS_FILENAME",
+          "DOCUMENT_VERSION",
+          "LocalCredentialProvider",
+          "default",
+          "parseCredentialsDocument",
+          "renderFlatLayoutMigration",
+          "resolveSpec"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-deepseek-account": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "DeepSeekAccount",
+          "default",
+          "desktopClientHeaders",
+          "installAccountTaskCancellation",
+          "isRunningAccountTask",
+          "mergePlatformCookies",
+          "platformClientHeaders",
+          "platformWireLocale"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-deepseek-account-platform": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "PlatformAccount",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-deepseek-llm-api-extensions": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "DeepSeekLlmApiExtensionRegistry",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-deque": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Deque"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-agent-team": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "TeamError",
+          "TeamId",
+          "TeamMessageId",
+          "TeamService",
+          "TeamTaskId",
+          "default"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-agent-team-profile": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-experimental-api-speech-to-text": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-auto-review": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-client-ui-agent-team": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-client-ui-voice-input": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-schedule-bundle": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-experimental-speech-to-text": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types",
+        "./wave"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-speech-to-text-sensevoice": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./worker"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-tool-agent-team": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-experimental-voice-input-bundle": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-file-reference": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./grammar",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "FILE_REFERENCE_PROMPT",
+          "FileReferenceService",
+          "activeAtToken",
+          "default",
+          "formatFileMention"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-file-reference-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./search",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_FILE_SEARCH_EXCLUDED_DIRECTORIES",
+          "DEFAULT_FILE_SEARCH_MAX_ENTRIES",
+          "DEFAULT_FILE_SEARCH_MAX_RESULTS",
+          "FILE_REFERENCE_PROMPT",
+          "LocalFileReferenceService",
+          "WorkspaceFileSearch",
+          "activeAtToken",
+          "default",
+          "formatFileMention"
+        ],
+        "./search": [
+          "activeAtToken",
+          "formatFileMention"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-fs": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "FileSystem",
+          "FsError",
+          "FsTargetKey",
+          "FsVersion",
+          "default"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-fs-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "LocalFileSystem",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-fs-observation-policy": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-fs-sandbox": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SandboxedFileSystem",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-goal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "GOAL_CHANGE_VERSION",
+          "GoalError",
+          "GoalId",
+          "GoalService",
+          "applyGoalProjection",
+          "decodeGoalChange",
+          "default",
+          "foldGoal",
+          "goalChangeRef",
+          "goalProjectionDefinition"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-goal-round-driver": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name",
+          "renderGoalRoundPrompt"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-headless": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./package.json",
+        "./src/*",
+        "./startup"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./startup": [
+          "HEADLESS_STARTUP_SERVICE",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-hmr": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-home-paths": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_DSH_HOME_DISPLAY",
+          "DSH_HOME_DIR_NAME",
+          "DSH_HOME_ENV",
+          "canonicalizeWatchPath",
+          "defaultDshHome",
+          "dshCachePath",
+          "dshHomeDisplay",
+          "dshHomePath",
+          "expandHomePath",
+          "resolveDshHome"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-hook-protocol": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_HOOK_TIMEOUT_MS",
+          "DEFAULT_STDERR_SUMMARY_MAX_CHARS",
+          "appendHookInvoked",
+          "appendHookResult",
+          "createDetachedRuns",
+          "matcherDiagnostic",
+          "matchesMatcher",
+          "mergeHookOutputs",
+          "parseHookOutput",
+          "runHook",
+          "summarizeStderr"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-hooks-claude-code": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-hooks-codex": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-directory-picker": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "DirectoryPicker",
+          "DirectoryPickerError",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-directory-picker-auto": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BACKEND_PACKAGES",
+          "SURFACE_PACKAGES",
+          "apply",
+          "canExecute",
+          "hasLinuxChooserBinary",
+          "inject",
+          "name",
+          "resolveDirectoryPickerBackend"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-directory-picker-browse": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "boundedInsert",
+          "default",
+          "fullyQualified",
+          "raceAbort"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-directory-picker-native": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./worker"
+      ],
+      "symbols": {
+        ".": [
+          "default",
+          "pickNativeDirectory"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-frontend-static": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name",
+          "serveStatic"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-open-in-app": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./shared",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-plugin-inventory": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "PluginInventoryGateway",
+          "default",
+          "pluginEntryId",
+          "readPluginInventory"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-product-telemetry-otel": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-host-webserver": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "WebServer",
+          "default",
+          "renderIndexInjections"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-http-proxy": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "clearedProxyEnv",
+          "installProxyFromEnvironment",
+          "proxyEnvironmentForChild",
+          "proxyRouteFor"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-invariants": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "InvariantError",
+          "InvariantRegistry",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-jobs": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./brand",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./view"
+      ],
+      "symbols": {
+        ".": [
+          "JobId",
+          "JobRegistry",
+          "default"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-jobs-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "LocalJobRegistry",
+          "TASK_WAIT_TIMEOUT",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-launch-environment": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DSH_LAUNCH_ENVIRONMENT_KEY",
+          "createLaunchEnvironmentSnapshot",
+          "launchEnvironmentOf",
+          "launchedThroughSsh"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-lazy-require": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "createLazyRequire"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-llm": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./assistant-stream",
+        "./brand",
+        "./invariant",
+        "./message",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "ACCOUNT_QUOTA_EXCEEDED_CODE",
+          "APP_IDENTITY",
+          "AssistantStreamAccumulator",
+          "BlockAssembler",
+          "CONTEXT_SUMMARY_MAX_CHARS",
+          "CONTEXT_WINDOW_EXCEEDED_CODE",
+          "EMPTY_RESPONSE_CODE",
+          "HarnessError",
+          "IMAGE_OFFLOAD_REQUIRED_CODE",
+          "INVALID_CREDENTIAL_CODE",
+          "LlmAdapter",
+          "LlmAttemptId",
+          "LlmError",
+          "LlmRuntime",
+          "MessageId",
+          "ProviderRequestId",
+          "QUOTA_EXCEEDED_CODE",
+          "ReasoningEffortId",
+          "RetryPolicySchema",
+          "ToolCallId",
+          "assembleAssistantStream",
+          "assertUsableApiKey",
+          "assistantStreamChunks",
+          "assistantStreamFirstTokenTime",
+          "assistantStreamHasVisibleContent",
+          "assistantStreamHasVisibleText",
+          "attributionHeaders",
+          "boundContextSummary",
+          "callConfigEquals",
+          "chunkHasVisibleText",
+          "contentHasFile",
+          "contentHasImage",
+          "createAssistantMessage",
+          "createDeveloperMessage",
+          "createMessage",
+          "createSystemMessage",
+          "createToolResultMessage",
+          "createUserMessage",
+          "default",
+          "errorChain",
+          "expandAssistantStream",
+          "fileHandleText",
+          "freezeMessage",
+          "isAgentLoopRequest",
+          "isContextWindowExceededError",
+          "isHarnessError",
+          "isQuotaExceededError",
+          "isTokenDelta",
+          "isVisibleChunk",
+          "joinAssistantStreamText",
+          "lastAssistantStreamChunk",
+          "markAgentLoopRequest",
+          "normalizeApiKey",
+          "offloadedImageText",
+          "projectFilesToText",
+          "projectImagesForTextModel",
+          "projectOffloadedImages",
+          "projectToolUpdates",
+          "requestImageHandleText",
+          "requiredImageOffload",
+          "resolveImageAttachmentAccess",
+          "resolveRetryPolicy",
+          "runFirstTokenTime",
+          "runFirstVisibleTime",
+          "textOnlyImageText",
+          "userAgent"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-llm-deepseek": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEFAULT_CONTEXT_WINDOW",
+          "DEFAULT_FILES_API_TIMEOUT_MS",
+          "DEFAULT_FILE_EXPIRY_SECONDS",
+          "DEFAULT_FILE_QUOTA_CLEANUP_BATCH",
+          "DEFAULT_FILE_REFRESH_MARGIN_SECONDS",
+          "DEFAULT_IMAGE_OFFLOAD_BYTE_QUANTUM",
+          "DEFAULT_IMAGE_OFFLOAD_COUNT_QUANTUM",
+          "DEFAULT_INLINE_IMAGE_OFFLOAD_BYTE_QUANTUM",
+          "DEFAULT_LOW_DETAIL_IMAGE_PIXEL_BUDGET",
+          "DEFAULT_MAX_IMAGES_PER_REQUEST",
+          "DEFAULT_MAX_INLINE_REQUEST_IMAGE_BYTES",
+          "DEFAULT_MAX_REQUEST_FILES_BYTES",
+          "DEFAULT_MAX_TOKENS",
+          "DEFAULT_REQUEST_IMAGE_MAX_BYTES",
+          "DEFAULT_STREAM_IDLE_TIMEOUT_MS",
+          "DeepSeekAdapter",
+          "DeepSeekFileId",
+          "DeepSeekFileStore",
+          "DeepSeekFilesClient",
+          "DeepSeekUploadIndex",
+          "MAX_FILE_EXPIRY_SECONDS",
+          "MAX_FILE_UPLOAD_BYTES",
+          "MAX_IMAGE_BYTES",
+          "MAX_STORED_FILE_BYTES",
+          "MAX_STORED_FILE_COUNT",
+          "MIN_FILE_EXPIRY_SECONDS",
+          "PUBLIC_BASE_URL",
+          "REQUEST_IMAGE_MAX_DIMENSION",
+          "catalogModelInfo",
+          "deepSeekConfigFields",
+          "deepSeekFileScope",
+          "deepSeekImageRequestPricing",
+          "deepSeekImageTokens",
+          "deepSeekRequestImageDimensions",
+          "plainOptions",
+          "registerDeepSeekProvider",
+          "resolveAdapterOptions",
+          "resolveRequestImageMaxBytes",
+          "resolveRequestImageTarget"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-llm-deepseek-account": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-llm-deepseek-api-key": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name",
+          "plainOptions",
+          "resolveAdapterOptions"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-llm-pi-ai": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "PiAiAdapter",
+          "apply",
+          "inject",
+          "name",
+          "recordKeyFor",
+          "supportedProtocols"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-llm-retry": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "RetryId",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-mcp-client": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "createMcpToolDefinition",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-mcp-resources": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "McpResourceRuntime",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-message-feedback": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "MessageFeedbackService",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-native-command": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "canOpenNativePath",
+          "desktopApplicationIcon",
+          "desktopDataDirectories",
+          "desktopEntryFields",
+          "nativeFileApplications",
+          "nativeFileManager",
+          "openNativeAssociatedPath",
+          "openNativeFileApplication",
+          "openNativePath",
+          "openNativeTextFile",
+          "revealNativePath",
+          "runNativeCommand"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-office-to-pdf": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "OfficeSourceKey",
+          "OfficeToPdf",
+          "OfficeToPdfError",
+          "OfficeToPdfGeneration",
+          "OfficeToPdfKey",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-otel": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-output-retention": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ItemRetainer",
+          "TextRetainer",
+          "describeOmitted",
+          "formatRetentionNotice",
+          "truncateWithoutSplittingSurrogatePair"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-package-manifest": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-permission-presets": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "AUTO_PRESET",
+          "CUSTOM_PRESET",
+          "PermissionPresetService",
+          "default"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-persona": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "PERSONA_PREFIX_SECTION",
+          "PERSONA_SUFFIX_SECTION",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-plan-mode": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "EXIT_PLAN_MODE",
+          "PlanModeController",
+          "default",
+          "planProjectionDefinition",
+          "resolveConfig"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-plugin-manager": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./operations",
+        "./package.json",
+        "./registry",
+        "./remote",
+        "./src/*",
+        "./tools",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "InvalidInstallSpecError",
+          "PluginManager",
+          "classifyInstallFailure",
+          "default",
+          "parseInstallSpec"
+        ],
+        "./operations": [
+          "readProfileVersionExemptions",
+          "setProfileVersionExemption"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-plugin-package-inventory-deepseek": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-ptc-runtime": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DUNDER_MEMBER",
+          "PORTABLE_RESERVED_WORDS",
+          "PtcRuntime",
+          "RESERVED_BINDING_GLOBALS",
+          "RESERVED_ERROR_MEMBERS",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-ptc-runtime-node": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./process"
+      ],
+      "symbols": {
+        ".": [
+          "NodePtcRuntime",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-pwsh-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ENCODING_PREAMBLE",
+          "ENV_OVERRIDES",
+          "PwshLocalExecutor",
+          "assertServiceablePwshConfig",
+          "candidatePwshPaths",
+          "default",
+          "resolvePwshPath"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-pwsh-sandbox": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SandboxPwshExecutor",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-repeat-tool-reminder": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sandbox": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ESCALATION_TARGETS",
+          "SANDBOX_UNAVAILABLE",
+          "SandboxProvider",
+          "SandboxUnavailableError",
+          "WIDER_MODES",
+          "approveEscalation",
+          "canonicalPath",
+          "classifyRunnerFailure",
+          "default",
+          "escalationHintMarker",
+          "isRunnerSpawnFailure",
+          "matchesSignature",
+          "sandboxDenialMarker",
+          "sandboxPermissionsDescription",
+          "validateEscalationArgs",
+          "writableRoots"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sandbox-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "LocalSandboxProvider",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sandbox-policy": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SANDBOX_MODES",
+          "SandboxPolicyService",
+          "default",
+          "setSandboxMode"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sandbox-windows-acl": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./runner",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ACL_DIAGNOSIS_SKILL",
+          "AclSandbox",
+          "AclWriteGrant",
+          "assertTempRootOutsideWorkspace",
+          "registerAclDiagnosisSkill",
+          "tempWriteSid",
+          "workspaceWriteSid"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-schedule": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./locale/*.json",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert"
+      ],
+      "symbols": {
+        ".": [
+          "MAX_TITLE_LENGTH",
+          "MIN_EVERY_INTERVAL_SECONDS",
+          "SCHEDULE_CHANGE_VERSION",
+          "ScheduleId",
+          "ScheduleInputError",
+          "ScheduleLogError",
+          "ScheduleService",
+          "canonicalizeCronExpression",
+          "createAfterScheduleRecord",
+          "createAtScheduleRecord",
+          "createCronScheduleRecord",
+          "createDailyScheduleRecord",
+          "createEveryScheduleRecord",
+          "createWeeklyScheduleRecord",
+          "decodeScheduleChange",
+          "decodeScheduleRecord",
+          "default",
+          "foldScheduleEvents",
+          "isRecurringScheduleRecord",
+          "normalizeWeekdays",
+          "parseCronInput",
+          "parseWeeklyInput",
+          "registerScheduleTools",
+          "renderRecurringReminderBatchFraming",
+          "renderReminderFraming",
+          "resolveCronOccurrence",
+          "resolveDailyOccurrence",
+          "resolveEveryOccurrence",
+          "resolveRecurringOccurrence",
+          "resolveWeeklyOccurrence",
+          "scheduleDomain",
+          "scheduleTitle",
+          "scheduleView",
+          "weeklyTime"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-scope": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "AnonymousEntries",
+          "NamedEntries",
+          "ScopedLayers",
+          "bindScopeParent",
+          "carrierKeyOf",
+          "createScope",
+          "isScopeCarrier",
+          "scopeChainOf",
+          "scopeOf",
+          "scopeParentOf",
+          "scopeTarget"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sdk-app": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "SDK_APP_STARTUP_SERVICE",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sdk-jsonrpc-server": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "HarnessSdkJsonRpcServer",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-sdk-minimal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-sdk-protocol": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "JsonRpcLineTransport",
+          "JsonRpcResponseError"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./fork",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./surface",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "KNOWN_SESSION_EVENT_TYPES",
+          "SESSION_FORMAT_VERSION",
+          "Session",
+          "SessionForkError",
+          "SessionId",
+          "SessionLogOffset",
+          "SessionPreparation",
+          "SessionSeq",
+          "SessionStore",
+          "TOOL_NOT_STARTED",
+          "TOOL_OUTCOME_UNKNOWN",
+          "ToolCallRecovery",
+          "adoptSessionEvent",
+          "buildForkSeed",
+          "canonicalHeader",
+          "decodeSeqRanges",
+          "default",
+          "deriveEventMessage",
+          "encodeSeqRanges",
+          "foldRequestHeader",
+          "foldSurface",
+          "headerEquals",
+          "interruptedTurnClosers",
+          "isAppendSurfaceEvent",
+          "isReplacementSurfaceEvent",
+          "isSurfaceEligibleType",
+          "isSurfaceEvent",
+          "snapshotSessionEvent"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-checkpoint-policy": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-format": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SessionFormatError",
+          "SessionFormatEventCollector",
+          "SessionFormatUnsupportedMigrationError",
+          "createSessionFormatCatalog",
+          "createSessionFormatChain",
+          "defineSessionFormatMigration",
+          "inspectSessionFormatVersion",
+          "isSessionFormatJsonObject",
+          "parseSessionFormatLogFilename",
+          "sessionFormatCount",
+          "sessionFormatLogFilename",
+          "sessionFormatSafeInteger",
+          "sessionFormatVersion",
+          "snapshotSessionFormatHeader",
+          "snapshotSessionFormatJson"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-format-catalog": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./message-projections",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SessionFormatUnsupportedMigrationError",
+          "createSessionFormatCatalogWithChildren",
+          "historicalSessionFormatCatalog",
+          "sessionFormatCatalog"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-format-v0-to-v1": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "RELEASED_V0_EVENT_DISPOSITIONS",
+          "RELEASED_V0_EVENT_TYPES",
+          "assertReleasedArtifactRelationships",
+          "assertReleasedEventPayload",
+          "assertReleasedPayloadSemantics",
+          "assertReleasedSurfaceMetadata",
+          "assertReleasedV1Header",
+          "defineReleasedPayloadDisposition",
+          "isReleasedAssistantChunkRun",
+          "releasedV0SessionFormatCodec",
+          "releasedV1SessionFormatCodec",
+          "restoreReleasedV1Artifact",
+          "sessionFormatV0ToV1"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-format-v1-to-v2": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "RELEASED_V2_EVENT_DISPOSITIONS",
+          "RELEASED_V2_EVENT_TYPES",
+          "assertReleasedV2Header",
+          "releasedV1SessionFormatCodec",
+          "releasedV2SessionFormatCodec",
+          "restoreReleasedV2Artifact",
+          "sessionFormatV1ToV2"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-format-v2-to-v3": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "assertReleasedV3Header",
+          "assertV3EventAdmission",
+          "assertV3RowAdmission",
+          "releasedV2SessionFormatCodec",
+          "releasedV3SessionFormatCodec",
+          "restoreReleasedV3Artifact",
+          "sessionFormatV2ToV3"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-format-v3-to-v4": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "RELEASED_V3_EVENT_TYPES",
+          "assertReleasedV4Header",
+          "assertReleasedV4Relationships",
+          "assertV4RowAdmission",
+          "createSessionFormatV3ToV4",
+          "historicalChildCatalogSource",
+          "releasedV3SessionFormatCodec",
+          "releasedV4SessionFormatCodec",
+          "restoreReleasedV4Artifact",
+          "sessionFormatV3ToV4"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-log-deepseek": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "acceptedThrough",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-log-export": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEFAULT_SESSION_LOG_COMPRESSION_LEVEL",
+          "SESSION_LOG_EXPORT_PATH",
+          "SESSION_LOG_FILENAME",
+          "apply",
+          "flushLiveSessionLog",
+          "inject",
+          "name",
+          "readSessionLogText",
+          "serializeSessionLog",
+          "sessionLogExportDeps",
+          "sessionLogZipEntries",
+          "sessionLogZipFilename",
+          "streamSessionLogZip"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-persistence": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SessionAlreadyExistsError",
+          "SessionAlreadyOwnedError",
+          "SessionFormatUnsupportedError",
+          "SessionHandleClosedError",
+          "SessionOwnershipLostError",
+          "SessionPersistence",
+          "SessionPersistenceCorruptionError",
+          "SessionPersistenceNotFoundError",
+          "SessionPersistenceRevision",
+          "SessionReadOnlyError",
+          "assertContiguous",
+          "assertStoredId",
+          "assertVersion",
+          "default",
+          "materializeAppendBatch",
+          "materializeCreateHeader",
+          "sessionFormatVersionRefusal",
+          "validateStoredEvents"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-persistence-jsonl": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "JsonlCompressionSchema",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-projection": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "SessionProjectionRegistry",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-projection-cache": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "SessionProjectionCache",
+          "checkpointIdentity",
+          "checkpointRecord",
+          "checkpointRow",
+          "default",
+          "projectionCacheDomainSpec"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-query": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SESSION_QUERY_DEFAULT_PERSISTED_INSPECT_CONCURRENCY",
+          "SESSION_QUERY_DEFAULT_PREPARED_SESSION_CACHE_SIZE",
+          "SESSION_QUERY_READ_WINDOW_MAX",
+          "SessionQueryEngine",
+          "SessionQueryError",
+          "SessionSearchCursor",
+          "assertSessionHeadersCompatible",
+          "buildSessionEventRecords",
+          "buildSessionEventSearchDocuments",
+          "compileSessionTextFilter",
+          "default",
+          "extractSessionEventText",
+          "filterSessionEventDocuments",
+          "filterSessionResults",
+          "materializeSessionEventResultFilters",
+          "materializeSessionResultFilters",
+          "readColdSessionLog"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-query-sqlite": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SESSION_QUERY_SQLITE_APPLICATION_ID",
+          "SESSION_QUERY_SQLITE_DEFAULT_LIMIT",
+          "SESSION_QUERY_SQLITE_MAX_LIMIT",
+          "SESSION_QUERY_SQLITE_PATH_KEY",
+          "SESSION_QUERY_SQLITE_SCHEMA_VERSION",
+          "SESSION_QUERY_SQLITE_SNIPPET_CHARS",
+          "SqliteSessionQueryEngine",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-reference": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_CANDIDATE_LIMIT",
+          "DEFAULT_MAX_REFERENCE_BYTES",
+          "MAX_REFERENCES",
+          "SESSION_REFERENCE_SCHEME",
+          "SessionReferenceError",
+          "SessionReferenceResolver",
+          "decodeSessionReferenceUri",
+          "default",
+          "encodeSessionReferenceUri",
+          "formatSessionReferenceMention",
+          "parseSessionReferenceText"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-stats": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-telemetry": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SessionTelemetryBackend",
+          "SessionTelemetryCoordinator"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-telemetry-otel": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEFAULT_SHUTDOWN_TIMEOUT_MILLIS",
+          "DEFAULT_TELEMETRY_MODE",
+          "OpenTelemetrySessionBackend",
+          "SessionTelemetryMode",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-title": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "SessionTitleInvalidError",
+          "SessionTitleProviderId",
+          "SessionTitleService",
+          "default",
+          "fallbackSessionTitle",
+          "foldSessionTitle",
+          "normalizeSessionTitle",
+          "titleProjectionDefinition",
+          "truncateTitleUtf8"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-title-first-prompt-llm": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-title-llm": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SESSION_TITLE_TIMEOUT_CODE",
+          "SessionTitleLlmConfigFields",
+          "SessionTitleLlmConfigSchema",
+          "generateSessionTitleWithLlm",
+          "registerSessionTitleLlmProvider",
+          "resolveSessionTitleLlmConfig"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-session-turn-outline": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-settings": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "SettingsConflictError",
+          "SettingsForms",
+          "default",
+          "redactSecrets"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-shell": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DSH_ENV_PREFIX",
+          "ShellExecutor",
+          "default",
+          "parseExitStatus"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-shell-env": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "ShellEnvRegistry",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-skill": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BUNDLED_SKILL_RANK",
+          "SkillRegistry",
+          "default",
+          "escapeText",
+          "isModelInvocable",
+          "isSkillName",
+          "isUserInvocable",
+          "renderSkillContent"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-skill-badge": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-skill-filesystem": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "FileSystemSkillProvider",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-skill-office": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-spill": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "SpillLocator",
+          "SpillStore",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-spill-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DEFAULT_ROOT_PREFIX",
+          "LocalSpillStore",
+          "default",
+          "discoverDefaultRoots",
+          "encodeSegment",
+          "isErrno",
+          "privateRoot",
+          "saveTextFile",
+          "sessionDir",
+          "sweepSpillRoots"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-spill-policy": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./notice",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-storage": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BackendRegistry",
+          "Storage",
+          "StorageError",
+          "UNIT_NAME_RE",
+          "default",
+          "storageBackendServiceKey"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-storage-domain": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DomainError",
+          "DomainFacility",
+          "apply",
+          "defineDomain",
+          "descriptorOf",
+          "domainTable",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-storage-json": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "JsonStorageBackend",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-subagent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./internal",
+        "./invariant",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert"
+      ],
+      "symbols": {
+        ".": [
+          "AssistantOutputFold",
+          "NO_START_CAPABILITIES",
+          "SUBAGENT_DESCRIPTOR_VERSION",
+          "SubagentDepthError",
+          "SubagentError",
+          "SubagentRunId",
+          "SubagentRuntime",
+          "appendDelegatedPolicyOverrides",
+          "applyChildComposition",
+          "assertPositiveFinite",
+          "assertSubagentMaxDepth",
+          "assertUsableCwd",
+          "captureDelegatedPolicyOverrides",
+          "childSessionMeta",
+          "default",
+          "delegationDepthOf",
+          "finalAssistantOutput",
+          "foldSubagentDescriptor",
+          "parentAgentOptionsForDelegation",
+          "resolveChildAgentOptions",
+          "resolveChildCwd",
+          "resolveChildDepth",
+          "settleRun",
+          "settleRunResult",
+          "snapshotSubagentDescriptor",
+          "subprocessRunHandle",
+          "validateConfiguredCwd"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-subagent-fork-in-process": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-subagent-in-process-driver": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "STRUCTURED_OUTPUT_INSTRUCTION",
+          "STRUCTURED_OUTPUT_TOOL",
+          "startInProcessRun"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-subagent-spawn-in-process": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-subprocess": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./control",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "DSH_ENV_PREFIX",
+          "SENSITIVE_ENV_PATTERN",
+          "SubprocessExecutableNotFoundError",
+          "SubprocessRuntime",
+          "default",
+          "scrubbedParentEnv"
+        ],
+        "./control": [
+          "SUBPROCESS_CONTROL_ENV",
+          "SUBPROCESS_CONTROL_FD",
+          "openInheritedControlChannel"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-subprocess-local": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./output",
+        "./package.json",
+        "./runner",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "LocalSubprocessRuntime",
+          "default"
+        ],
+        "./output": [
+          "OutputCollector",
+          "logSpillFailure",
+          "prepareManagedProcessBinding"
+        ],
+        "./runner": [
+          "runSelectedSubprocessRunner"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-system-prompt": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "PERSONA_PREFIX_SECTION",
+          "PERSONA_SUFFIX_SECTION",
+          "SystemPrompt",
+          "TOOL_ORDER_REST",
+          "default",
+          "joinContextSections",
+          "renderContextSections",
+          "renderContextSnapshot",
+          "renderPrompt"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-terminal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "TerminalBackendCleanupError",
+          "TerminalError",
+          "TerminalSessionId",
+          "TerminalSessionService",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-terminal-bash": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "BashTerminalBackend",
+          "Config",
+          "PWSH_PROMPT_SETUP",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-time-context": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./locale/*.json",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-timeout": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "MAX_TIMER_DELAY_MS",
+          "TimeoutReason",
+          "clampTimeout",
+          "deadline",
+          "idleWatchdog",
+          "timeoutOf"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tmux-context": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-token-meter": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./estimate",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "TokenMeter",
+          "default"
+        ],
+        "./client": [
+          "deriveTurnTokenUsage"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-ask-user": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-bash": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-bash-persistent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-call-timeout-policy": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "TOOL_TIMEOUT",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-cordis": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./host",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-fs": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-fs-search": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "GLOB_MAX_RESULTS",
+          "GLOB_VCS_EXCLUDES",
+          "GREP_MAX_LINE_BYTES",
+          "GREP_MAX_MATCHES",
+          "RAW_OUTPUT_MAX_BYTES",
+          "SEARCH_GRACE_MS",
+          "SEARCH_META_MAX_BYTES",
+          "SEARCH_STDERR_MAX_BYTES",
+          "SEARCH_TIMEOUT_MS",
+          "SearchError",
+          "apply",
+          "applyGlobTool",
+          "applyGrepTool",
+          "buildGlobCommand",
+          "buildGrepCommand",
+          "formatGlobOutput",
+          "formatGrepMatches",
+          "formatGrepOutput",
+          "inject",
+          "name",
+          "parseGlobArgs",
+          "parseGrepArgs",
+          "parseGrepMatches",
+          "presentGlobCall",
+          "presentGlobResult",
+          "presentGrepCall",
+          "presentGrepResult",
+          "previewLine",
+          "resolveRgPath",
+          "runRipgrep",
+          "sampleAcrossTopLevel",
+          "toWorkdirRelative",
+          "trySaveFormattedResult"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-goal": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-jobs": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-present": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-pwsh": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-pwsh-persistent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-ralph": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-skill": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-str-replace-editor": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-subagent": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./model-selection-settings",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./model-selection-settings": [
+          "SubagentModelSelectionConfig",
+          "default",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-subagent-control": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./list-agents",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-todo": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./invariant",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-web": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEFAULT_FETCH_MAX_OUTPUT_CHARS",
+          "DEFAULT_WEB_TOOL_TIMEOUT_MS",
+          "WEB_SEARCH_MAX_QUERIES",
+          "WEB_SEARCH_MAX_RESULTS",
+          "apply",
+          "applyWebFetchTool",
+          "applyWebSearchTool",
+          "fetchMetaFromResult",
+          "fetchMetaFromValue",
+          "formatFetchOutput",
+          "formatSearchOutput",
+          "inject",
+          "name",
+          "parseFetchArgs",
+          "presentFetchCall",
+          "presentFetchResult",
+          "presentSearchCall",
+          "presentSearchResult",
+          "searchMetaFromResult",
+          "searchMetaFromValue"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-workflow": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tool-workspace-dependencies": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "installPrimaryRuntime",
+          "name",
+          "parsePrimaryRuntime",
+          "readPrimaryRuntime",
+          "resolvePrimaryRuntime",
+          "workspaceDependencyPaths"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-tools": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./presentation",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "CodeRunFailedError",
+          "JsonSchemaError",
+          "RUN_CODE_NAME",
+          "TOOL_ABORTED",
+          "TOOL_ABORTED_BEFORE_DISPATCH",
+          "TOOL_RUNTIME_SCHEDULER",
+          "ToolArgsError",
+          "ToolNotFoundError",
+          "ToolOutputError",
+          "ToolRuntime",
+          "assertObjectJsonSchema",
+          "assertSupportedJsonSchema",
+          "default",
+          "defineContentToolFixture",
+          "defineTool",
+          "jsonSchemaToPy",
+          "jsonSchemaToTs",
+          "parameterSchemaSpecToJsonSchema",
+          "renderToolsSdk",
+          "renderToolsSdkPy",
+          "validateArgs",
+          "validateJsonSchemaValue",
+          "valueSchemaSpecToJsonSchema"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-typert-loader": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "TYPERT_HOST_EXPORT",
+          "apply",
+          "inject",
+          "name",
+          "validateTypertManifest"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-typert-protocol": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Remote",
+          "RemoteError",
+          "RemoteScope",
+          "TYPERT_OWNED_VALUE",
+          "TypertRemoteService",
+          "bindTypertRemote",
+          "isRemoteJsonValue",
+          "isRemoteUplinkItem",
+          "isTypertOwnedValue",
+          "isTypertRemoteSegment",
+          "remoteErrorOf",
+          "remoteMethods",
+          "typertOwnedValue"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-typert-registry": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./client",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "TypertRegistry",
+          "default",
+          "typertEndpoint",
+          "typertKey",
+          "typertPackageKey"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-user-approval": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "APPROVAL_POLICIES",
+          "ApprovalRequestId",
+          "ApprovalService",
+          "default",
+          "setApprovalPolicy"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-user-questions": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./remote",
+        "./src/*",
+        "./typert",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "TIMED_WAIT_PARAMETER",
+          "UserQuestionError",
+          "UserQuestionService",
+          "default",
+          "isTimedAskUserQuestionSchema"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-util-code-language": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "CODE_HIGHLIGHT_EXTENSIONS",
+          "languageForPath",
+          "readLangHintForPath"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-util-crypto": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "bytesToBase64",
+          "randomUUID"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-util-time": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "canonicalClientTimeZone"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-util-values": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "WeakMapWithValues",
+          "assertNever",
+          "deepEqualJson",
+          "deepFreeze",
+          "isJsonValue",
+          "snapshotJsonValue"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-util-workspace-path": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "abbreviateHomePath",
+          "absoluteFileAddress",
+          "fileAddressFor",
+          "fileMediaUrl",
+          "isAbsoluteWorkspacePath",
+          "parseFileAddress",
+          "pathPartsOf",
+          "relativizeToCwd",
+          "resolveWorkspacePath",
+          "sessionFileAddress",
+          "workspaceTitleOf"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-web": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "WebError",
+          "WebRuntime",
+          "default"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-web-app": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./cordis.patch.yml",
+        "./package.json",
+        "./presets/*.patch.yml",
+        "./src/*",
+        "./startup"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "internals",
+          "name",
+          "resolveLanTrust"
+        ],
+        "./startup": [
+          "WEB_STARTUP_SERVICE",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-web-fetch-http": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEFAULT_USER_AGENT",
+          "HttpFetchProvider",
+          "LOCAL_FETCH_PROVIDER_ID",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-web-frontend": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        "./dist/*",
+        "./package.json"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/dsh-web-search-deepseek": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "DEEPSEEK_DEFAULT_API_VERSION",
+          "DEEPSEEK_DEFAULT_BASE_URL",
+          "DEEPSEEK_DEFAULT_MAX_TOKENS",
+          "DEEPSEEK_DEFAULT_MAX_USES",
+          "DEEPSEEK_DEFAULT_MODEL",
+          "DEEPSEEK_PROVIDER_ID",
+          "DeepSeekSearchProvider",
+          "WEB_SEARCH_DEEPSEEK_SETTINGS_NAMESPACE",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-webhook": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "WebhookDeliveryId",
+          "WebhookRuleId",
+          "WebhookRuntime",
+          "WebhookSourceId",
+          "default"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-webhook-github": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-win32-process": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "ERROR_INSUFFICIENT_BUFFER",
+          "Win32Error",
+          "allocPtrSlot",
+          "allocUint32",
+          "closeHandleChecked",
+          "decodePtr",
+          "decodeUint32",
+          "drainPipe",
+          "extendWin32ProcessBindings",
+          "isJobEmpty",
+          "isNullPtr",
+          "loadWin32ProcessBindings",
+          "pollProcessExit",
+          "probeCurrentTokenJobSupport",
+          "spawnCurrentTokenJobProcess",
+          "spawnInheritedJobProcess",
+          "spawnPipedProcess",
+          "terminateJob",
+          "throwLastError",
+          "throwWin32",
+          "waitForProcessExit"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-workflow": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "WorkflowEngine",
+          "WorkflowError",
+          "WorkflowRunId",
+          "default",
+          "isFatalWorkflowError"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-workflow-ptc": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {
+        ".": [
+          "MaterializeError",
+          "default",
+          "materializeFromRealm",
+          "runWorkflowGuest",
+          "validateMeta"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-workspace": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./invariant",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "WorkspaceActiveSessionError",
+          "WorkspaceArchivedSessionPinError",
+          "WorkspaceId",
+          "WorkspaceMoveInvalidError",
+          "WorkspaceOrderInvalidError",
+          "WorkspaceRegistry",
+          "WorkspaceUnknownSessionError",
+          "default",
+          "realpathNormalize",
+          "workspaceDomainSpec",
+          "workspaceDomainState",
+          "workspaceRecord"
+        ],
+        "./invariant": [
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/dsh-workspace-changes": {
+      "version": "0.2.0-rc.2",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*",
+        "./types"
+      ],
+      "symbols": {
+        ".": [
+          "Config",
+          "apply",
+          "inject",
+          "name"
+        ]
+      }
+    },
+    "@deepseek-ai/libreoffice-kit": {
+      "version": "0.1.5",
+      "subpaths": [
+        ".",
+        "./cli",
+        "./package.json"
+      ],
+      "symbols": {
+        ".": [
+          "CONVERSION_FORMATS",
+          "ConversionError",
+          "ENGINE_VERSION",
+          "ENGINE_VERSIONS",
+          "IMAGE_FORMATS",
+          "createConverter",
+          "createConverterFactory",
+          "discoverRuntime"
+        ]
+      }
+    },
+    "@deepseek-ai/libreoffice-kit-win32-x64": {
+      "version": "0.1.5",
+      "subpaths": [
+        "./package.json",
+        "./prebuilds.json"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/node-addon-system": {
+      "version": "0.1.2",
+      "subpaths": [
+        "./flock",
+        "./landlock-run",
+        "./package.json"
+      ],
+      "symbols": {}
+    },
+    "@deepseek-ai/schemastery": {
+      "version": "3.18.4",
+      "subpaths": [
+        ".",
+        "./package.json",
+        "./src/*"
+      ],
+      "symbols": {}
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@your-scope/dsh-plugin-testkit",
-  "version": "0.8.1",
+  "version": "1.0.0",
   "private": true,
   "description": "DSH plugin test infrastructure: hermetic test homes and real-composition harnesses. Not a DSH plugin.",
   "type": "module",

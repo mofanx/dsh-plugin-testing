@@ -1,0 +1,10 @@
+{
+  "name": "@probe/real-range",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.0-rc.2 <0.3.0 || >=0.2.1-alpha.1 <0.3.0"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@your-scope/dsh-plugin-conformance",
-  "version": "0.8.1",
+  "version": "1.0.0",
   "private": true,
   "description": "Static conformance checker for DSH plugins: manifest + exports rules (DSH-C0xx). Not a DSH plugin.",
   "type": "module",

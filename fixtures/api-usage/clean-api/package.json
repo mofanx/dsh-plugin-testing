@@ -1,0 +1,10 @@
+{
+  "name": "@probe/clean-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=1.0.0 <3.0.0"
+  }
+}
