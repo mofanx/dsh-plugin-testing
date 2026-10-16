@@ -130,6 +130,25 @@ dsh-plugin-activate \
 npm test        # node --test "tests/**/*.spec.mjs"
 ```
 
-本包共 39 条用例（`home` 12 + `replay` 13 + `activate` 14）。其中 **9 条是真实启动用例**（`home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条 + `activate.spec.mjs` 4 条）：真的启动打包的 launcher，断言"世界"而不是插件的自述。找不到 launcher 时自动跳过；可用 `DSH_BIN` 指定其他安装。
+本包共 44 条用例（`home` 13 + `replay` 13 + `activate` 18）。其中 **10 条依赖真实 DSH 安装**（`home.spec.mjs` 1 条 + `replay.spec.mjs` 4 条 + `activate.spec.mjs` 5 条）：真的启动 launcher，断言"世界"而不是插件的自述。找不到 launcher 时**逐条给出原因并跳过**（不是裸 `# SKIP`）；可用 `DSH_BIN` 指定其他安装。
+
+### 测试支撑包必须与宿主同版本（一个真实的坑）
+
+`@deepseek-ai/dsh-llm-replay` 与 `@deepseek-ai/dsh-session-snapshot` 与 DSH **同步发版**，并且把自己的 peer 钉成**精确版本**（`"@deepseek-ai/dsh-llm": "0.2.0-rc.2"`）。所以拿一条宿主线的支撑包去跑**另一条**宿主线时，宿主自带的兼容性预检会直接禁用它 —— replay 车道随之无法运行。
+
+`resolveInstalledPackage` 因此**优先取宿主里的那一份**（`$DSH_HOST_NODE_MODULES`），取不到才回退到本包锁定的版本。两种情形都是明确的：
+
+- **宿主里有匹配版本**（把匹配版装进宿主 `node_modules`）→ replay 车道正常跑。
+- **没有** → 相关用例带着**两边版本号**跳过，而不是抛一句难懂的 `NO_ADAPTER`：
+
+  ```
+  ﹣ replay failure is the reported fault, … # 宿主 0.2.1-alpha.4 禁用了 dsh-llm-replay@0.2.0-rc.2：
+    该测试支撑包的 peer 是**精确版本**，只与它自己那条线兼容。把匹配的 0.2.1-alpha.4 版装进宿主
+    node_modules 即可启用本车道（resolveInstalledPackage 优先取宿主里的那一份）
+  ```
+
+  这个跳过是**收窄判定**的：只有"宿主自己说它不兼容"**且**"版本确实不同"才跳过；同版本下被禁用仍然会失败。
+
+> ⚠️ 别按 dist-tag 装这两个包：它们的 tag 映射与 `@deepseek-ai/dsh` **不一致**（`dsh-llm-replay` 的 `latest` 是 `0.0.1-rc.1`，`dsh` 的 `latest` 是 `0.2.0-rc.2`）。一律以宿主实际版本为准。
 
 若进程**根本起不来**（沙箱 `EPERM`、`DSH_BIN` 指向已删除的路径等），用例会以 `skip` + 具体 errno 报告，而不是伪装成"launcher 退出码异常"的失败 —— 二者指向完全不同的排查方向。超时**不算**环境问题，仍按失败处理（挂死的 launcher 正是这些用例要抓的）。

@@ -388,6 +388,36 @@ test('C067 不误报：非预发布宿主版本与"真的不满足"都不算这�
   assert.ok(!codes.includes('DSH-C067'))
 })
 
+test('C067 的作用域边界：只对 dsh 运行时系 peer 求值，cordis 系不报', () => {
+  // 这是对**已实现作用域**的守卫，而不是"cordis 上真会发生这种事"的断言。
+  //
+  // 真实世界里 cordis 不会出现同样的分裂：检查器对 cordis peer（C057）的比较锚定在
+  // **宿主机里实际装到的那个版本**上，而那个版本是安装器已经成功解析过的 —— 于是
+  // "运行时放行 / 安装期拒绝"这一对矛盾在 cordis 线上按定义不可能同时成立。
+  //
+  // 但代码里的作用域仍可能被后来者改错（例如把 C067 提到循环外面），而一旦如此，
+  // 它就会对 cordis 线产生**假的**告警。所以这里用一个人造的、形态上确实是
+  // "运行时放行 / 安装期拒绝"的 cordis 组合把边界钉死。
+  const dir = makePackage({
+    name: '@scope/dsh-plugin-cordis-scope',
+    version: '1.0.0',
+    // 比较器元组是 4.0.4 / 4.1.0，而宿主 4.0.5-alpha.1 的元组是 4.0.5：
+    // 运行时（includePrerelease）放行，裸 semver 拒绝 —— 与 dsh 那条完全同形。
+    peerDependencies: { '@deepseek-ai/cordis': '>=4.0.4 <4.1.0' },
+  })
+  const codes = codesOf(dir, { hostVersions: { '@deepseek-ai/cordis': '4.0.5-alpha.1' } })
+  assert.ok(!codes.includes('DSH-C067'), `C067 不应作用于 cordis 系，实际 [${codes.join(', ')}]`)
+
+  // 同一形态换成 dsh 系就**必须**报 —— 否则说明上面那条断言只是"什么也没检查"
+  const dsh = makePackage({
+    name: '@scope/dsh-plugin-dsh-scope',
+    version: '1.0.0',
+    peerDependencies: { '@deepseek-ai/dsh-llm': '>=0.2.0 <0.3.0' },
+  })
+  const dshCodes = codesOf(dsh, { hostVersions: { '@deepseek-ai/dsh-llm': '0.2.5-alpha.1' } })
+  assert.ok(dshCodes.includes('DSH-C067'), `dsh 系的同形组合应报 C067，实际 [${dshCodes.join(', ')}]`)
+})
+
 // --- completeness --------------------------------------------------------
 
 test('T12 覆盖了 rules.mjs 中声明的全部 T12 规则码', () => {

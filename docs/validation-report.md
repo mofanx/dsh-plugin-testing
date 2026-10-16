@@ -294,7 +294,7 @@ dsh-plugin-activate \
 
 149 → **163**，全部通过、0 skip（本机有打包宿主）。其中 testkit 39 条（`home` 12 + `replay` 13 + `activate` 14），含 9 条真实启动用例。
 
-## 十一、接进真实插件仓库的 CI，以及由此暴露的安装期维度（`DSH-C067`）
+## 十一、接进真实插件仓库的 CI：暴露的安装期维度（`DSH-C067`）与四个落地障碍
 
 第十节让探针在本机可用；本节把它和静态门禁一起接进 `mofanx/deepseek-eda-plugins` 的 CI，并记录落地过程中暴露的两个测试项目自身问题 —— 其中一个是**门禁的盲区**，比前几轮的问题更值得记。
 
@@ -309,7 +309,7 @@ dsh-plugin-activate \
 
 矩阵用**固定版本**（保证确定性）；另有一条**金丝雀**车道跟 `latest`/`alpha` 两个 dist-tag 走，`continue-on-error`、只在定时/手动触发 —— 上游发新版时提前知道插件会不会被禁用，而不阻塞任何 PR。门禁自身钉死在测试仓库的一个 commit（`TESTING_REV`）：门禁跟着 `main` 漂移会让"同一份代码给出不同结论"。
 
-### 2. CI 首次运行暴露的两个问题
+### 2. 第一次运行暴露的两个问题（安装期维度与探针归因）
 
 **① `npm init -y` 在点开头目录下直接失败**（11 秒即红）：
 
@@ -351,11 +351,7 @@ npm error Invalid name: ".dsh-host"
 | 负对照 | `0.2.0-rc.2` | 同上 | 零发现（两种语义都成立） |
 | 真实包（修复后并集） | 两条线都跑 | `>=0.2.0-rc.2 <0.3.0 \|\| >=0.2.1-alpha.2 <0.3.0` | **0 error / 0 warn**（不误报） |
 
-### 4. 用例数
-
-163 → **171**，全部通过、0 skip。新增 8 条：`C067` 三类（正对照 / 并集不误报 / 非预发布与"真的不满足"不算这一档）、`satisfiesInstallTime` 与 `admittedOnlyByRuntime` 的语义钉死、探针归因与区间守卫各 1 条、`inspectEntry` 的入口解析、以及"入口未构建"的真实启动用例。规则码 35 → **36**。
-
-### 5. 第三个问题：未构建的检出（CI 再次暴露）
+### 4. 第三个问题：未构建的检出（CI 再次暴露）
 
 换用带归因的探针重跑 CI，答案立刻明确：
 
@@ -374,7 +370,43 @@ npm error Invalid name: ".dsh-host"
 
 本地已按 CI 条件复刻验证（把 5 个包的 `package.json` 复制到临时目录、不带 `lib/`）：未构建 → 5 个包全部被列出、退出码 1；已构建的开发检出 → `MISSING_CREDENTIAL`、退出码 0。
 
-### 6. 最终结果：两条车道 × 两条宿主线全绿
+### 5. 第四个问题：测试支撑包把 replay 车道钉死在一条宿主线上
+
+把上面几步都修好后，`0.2.0-rc.2` 那条线全绿，**`0.2.1-alpha.4` 却在 replay 上红了一条**：
+
+```
+✖ replay failure is the reported fault, not a missing credential
+  ✖ AssertionError: The input did not match /llm-replay: a fixture path is required/
+    '…"reason":{"kind":"error","error":{"message":"no adapter registered for provider
+      \"deepseek-official\"","code":"NO_ADAPTER"}}}'
+  dsh: disabling profile plugin row "llm-replay": Plugin @deepseek-ai/dsh-llm-replay@0.2.0-rc.2
+       is incompatible with dsh 0.2.1-alpha.4: requirements {"@deepseek-ai/dsh-llm":"0.2.0-rc.2",…}
+```
+
+**根因是测试项目自身的一处设计缺陷，而且它正是本项目一直在教别人别犯的那个错**：testkit 把 `@deepseek-ai/dsh-llm-replay` 与 `@deepseek-ai/dsh-session-snapshot` 声明为自己的依赖并**精确锁定** `0.2.0-rc.2`，而这两个包把自己的 peer 也钉成了**精确版本**（`"@deepseek-ai/dsh-llm": "0.2.0-rc.2"` —— 比"单范围"更窄的极端形态）。于是拿它去跑另一条宿主线时，**宿主自己的预检**把 replay 行禁用了。一个教别人"范围要能跨线"的项目，自己的测试支撑却只覆盖一条线。
+
+**两侧修复**：
+
+1. `resolveInstalledPackage` 改为**优先取宿主里的那一份**（`$DSH_HOST_NODE_MODULES`），取不到才回退到 testkit 锁定的版本。于是"把匹配版本装进宿主"就能让 replay 车道在**任意**宿主线上跑通 —— 实测 alpha 线上 `pass 170 / fail 0 / skipped 2`。
+2. 拿不到匹配版本时**不再含糊失败**，而是带着两边版本号明确跳过：
+
+   ```
+   ﹣ replay failure is the reported fault, … # 宿主 0.2.1-alpha.4 禁用了 dsh-llm-replay@0.2.0-rc.2：
+     该测试支撑包的 peer 是**精确版本**，只与它自己那条线兼容。把匹配的 0.2.1-alpha.4 版装进宿主
+     node_modules 即可启用本车道（resolveInstalledPackage 优先取宿主里的那一份）
+   ```
+
+   这个跳过是**收窄判定**的：只有在"宿主自己说它不兼容"**且**"版本确实不同"时才跳过；同版本下被禁用仍会失败。
+
+**顺带发现的一个坑**：这两个测试支撑包的 **dist-tag 映射与 `@deepseek-ai/dsh` 不一致**（`dsh-llm-replay` 的 `latest` 是 `0.0.1-rc.1`，而 `dsh` 的 `latest` 是 `0.2.0-rc.2`）。照 tag 装会装出跨线的组合，必须一律以宿主实际版本为准。
+
+> 这一条**只有真实 CI 的多宿主线矩阵才可能发现**：本机固定在打包宿主上跑，两条线永远"恰好匹配"。
+
+### 6. 用例数（最终）
+
+163 → **173**，全部通过、0 skip（本机有打包宿主）。其中 conformance 129、testkit 44。新增 10 条：`C067` 三类 + 语义钉死 + 作用域边界（5）、探针归因与区间守卫（2）、`inspectEntry` 入口解析（1）、"入口未构建"真实启动（1）、`resolveInstalledPackage` 的宿主优先解析（1）。规则码 35 → **36**；离线/需真实宿主的分界：**162 / 11**。
+
+### 7. 最终结果：两条车道 × 两条宿主线全绿
 
 修复后重跑（`668c29c`，门禁钉 `f0b4eac`），**两条宿主线 × 两条车道全部通过**（run [38838324105](https://github.com/mofanx/deepseek-eda-plugins/actions/runs/38838324105)）。车道 B 在 `ubuntu-latest` 上的实测输出：
 

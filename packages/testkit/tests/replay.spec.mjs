@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 
-import { createTestHome, testHomeArgs } from '../src/home.mjs'
+import { createTestHome, resolveInstalledPackage, testHomeArgs } from '../src/home.mjs'
 import {
   REPLAY_MODEL_ID,
   REPLAY_PROVIDER_ID,
@@ -91,6 +91,61 @@ function assertLaunched(t, result) {
     result.error,
     undefined,
     `launcher 未能启动：${/** @type {NodeJS.ErrnoException} */ (result.error)?.code} ${result.error?.message}`,
+  )
+  return true
+}
+
+/** @param {string} dir @returns {string} that package's `version`, or `''` */
+function packageVersion(dir) {
+  try {
+    const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    return typeof manifest.version === 'string' ? manifest.version : ''
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * The host-under-test version, by the single source the contract names:
+ * `@deepseek-ai/dsh-app-boot`'s `version`. Derived from `DSH_BIN`
+ * (`<root>/node_modules/@deepseek-ai/dsh/lib/bin.js` → `<root>`).
+ *
+ * @returns {string}
+ */
+function hostAppBootVersion() {
+  const hostRoot = process.env.DSH_HOST_NODE_MODULES ?? join(dirname(DSH_BIN), '..', '..')
+  return packageVersion(join(hostRoot, '@deepseek-ai', 'dsh-app-boot'))
+}
+
+/**
+ * Recognize the one condition under which the replay lane genuinely cannot run:
+ * the linked test-support package belongs to a **different host line**.
+ *
+ * `dsh-llm-replay` pins its peers to exact versions, so the host's preflight
+ * disables a copy from another line and the replay lane would fail for a reason
+ * unrelated to the code under test. That is a fact about the host/plugin pair,
+ * not a defect — so it is reported as an explicit skip naming both versions
+ * (never a bare `# SKIP`, and never a silent pass).
+ *
+ * Deliberately narrow: it skips only when the host itself **says** the plugin is
+ * incompatible *and* the versions actually differ. A disable at the *same*
+ * version is a real problem and still fails.
+ *
+ * @param {import('node:test').TestContext} t
+ * @param {string} output
+ * @returns {boolean} whether the case was skipped
+ */
+function skipIfReplayHostMismatch(t, output) {
+  const linked = packageVersion(resolveInstalledPackage('@deepseek-ai/dsh-llm-replay'))
+  const host = hostAppBootVersion()
+  if (linked === '' || host === '' || linked === host) return false
+  const escaped = host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (!new RegExp(`disabling profile plugin row "llm-replay".*incompatible with dsh ${escaped}`, 's').test(output)) {
+    return false
+  }
+  t.skip(
+    `宿主 ${host} 禁用了 dsh-llm-replay@${linked}：该测试支撑包的 peer 是**精确版本**，只与它自己那条线兼容。` +
+      `把匹配的 ${host} 版装进宿主 node_modules 即可启用本车道（resolveInstalledPackage 优先取宿主里的那一份）`,
   )
   return true
 }
@@ -230,6 +285,7 @@ test('replay failure is the reported fault, not a missing credential', { skip: m
     // lane is real: `llm-deepseek` is genuinely off, so no key is ever sought.
     const result = runDsh(home, replayEnv(home.homeDir, {}, process.env), testHomeArgs(home, { task: 'say hi' }))
     if (!assertLaunched(t, result)) return
+    if (skipIfReplayHostMismatch(t, result.output)) return
     assert.equal(result.status, 1, result.output)
     assert.match(result.output, /llm-replay: a fixture path is required/)
     assert.match(result.output, /no adapter registered for provider/)

@@ -12,17 +12,17 @@
 
 ## 一、为什么要接
 
-仓库共 **171 个用例**（自动检查 128 + 工具箱 43）。其中：
+仓库共 **173 个用例**（自动检查 129 + 工具箱 44）。其中：
 
 | 类别 | 数量 | 需要什么 |
 |---|---|---|
-| **完全离线** | **160** | 什么都不需要（合成插件 + 合成宿主，不联网、不启动 DSH） |
+| **完全离线** | **162** | 什么都不需要（合成插件 + 合成宿主，不联网、不启动 DSH） |
 | 真实启动（launcher） | 10 | 一个**完整可运行的 DSH 安装** |
 | 宿主 API 面核对 | 1 | 真实宿主的 `node_modules` |
 
 那 11 个用例证明的是**离线用例证明不了**的事：插件真的能在这个宿主上 boot 起来、组合真的能装载、**运行时真的没有禁用某一行**、真实宿主的 API 面与基线真的对得上。
 
-> 当前 `ci.yml` **没有**提供真实安装（`ubuntu-latest` + 无宿主），所以这 11 个在 CI 上全部跳过（实测：`pass 160 / fail 0 / skipped 11`）。这是刻意的：宁可明确跳过，也不要为了"看起来全绿"而把它们降级成假通过。要接上它们见下方**方案 D**（npm 宿主，已在真实 CI 上验证）。
+> 本仓库的 `ci.yml` **已经有**真实宿主车道（`real-host`，宿主取自 npm），所以这 11 个在 CI 上会真正执行；`test` job 那一份实测是 `pass 162 / fail 0 / skipped 11`。这是刻意的：宁可明确跳过，也不要为了"看起来全绿"而把它们降级成假通过。要接上它们见下方**方案 D**（npm 宿主，已在真实 CI 上验证）。
 
 ## 二、三个环境变量分别要什么（已核实）
 
@@ -75,7 +75,7 @@
 ﹣ a fixture with no recorded model calls fails loudly instead of silently # fixture 缺失（…）
 ﹣ the real host yields a populated symbol surface                  # 未找到真实宿主 node_modules（DSH_HOST_NODE_MODULES=…）
 
-pass 160 / skipped 11 / fail 0        → CI 保持绿色
+pass 162 / skipped 11 / fail 0        → 离线 job 保持绿色
 ```
 
 **每个 skip 都自带原因**（变量名 + 具体路径），所以"CI 上有跳到黄色"时不需要翻源码就知道该配哪个变量。
@@ -147,10 +147,21 @@ DSH_HOST_NODE_MODULES  = $HOST_DIR/node_modules
 - **另设一条金丝雀**（跟 dist-tag 走、`continue-on-error`、只在定时/手动触发）：上游发新版时提前知道插件会不会被禁用，而不阻塞任何人。
 - **`DSH_FIXTURES` 仍无法从 npm 取得**：replay 的 fixture 用例在 npm 宿主下依旧会 skip（那是 DSH 源码仓库里的测试数据），需要走方案 C。
 
-**两条必须记住的使用前提**：
+**三条必须记住的使用前提**：
 
 1. **先构建再探测**。运行时激活探针验证的是**交付物**，而插件入口通常是构建产物（`lib/index.js`）—— 未构建时每一行都会 `failed to import` 并抛 `ERR_MODULE_NOT_FOUND`（这是症状，原因是没有构建）。探针现在会自行检查并单列「未构建的包」，但正确做法是先 `pnpm install --frozen-lockfile && pnpm run build`。
 2. **门禁自身要钉 revision**。被测插件仓库应把测试仓库 checkout 到一个**commit**（而非分支）再跑门禁；门禁跟着 `main` 漂移会让"同一份代码给出不同结论"，也会让一次失败的归因变得不可能。
+3. **要跑 replay 车道，就得再装一份与宿主同版本的测试支撑包**。`@deepseek-ai/dsh-llm-replay` 与 `@deepseek-ai/dsh-session-snapshot` 与 DSH **同步发版**，且把自己的 peer 钉成**精确版本** —— 拿一条线的支撑包去跑另一条线，宿主自带的兼容性预检会直接禁用它，replay 车道随之失败。按宿主实际版本补装即可：
+
+   ```bash
+   HOST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)")
+   npm install --no-audit --no-fund --no-save --prefix "$HOST_DIR" \
+     "@deepseek-ai/dsh-llm-replay@$HOST_VERSION" "@deepseek-ai/dsh-session-snapshot@$HOST_VERSION"
+   ```
+
+   `resolveInstalledPackage` **优先取宿主里的那一份**，取不到才回退到 testkit 自己锁定的版本 —— 所以不装也能跑，只是那几例 replay 用例会带着一段明确原因跳过（写明两边版本），而不是含糊失败。
+
+   > ⚠️ **不要按 dist-tag 装这两个包**：它们的 tag 映射与 `@deepseek-ai/dsh` **不一致**（`dsh-llm-replay` 的 `latest` 是 `0.0.1-rc.1`，而 `dsh` 的 `latest` 是 `0.2.0-rc.2`），照 tag 装会装出跨线的组合。一律以宿主实际版本为准。
 
 > **平台**：以上在 `ubuntu-latest` 上实测跑通 —— npm 宿主在 Linux 上能正常启动到兼容性预检之后。所以"真实宿主车道必须 Windows/macOS"只对**桌面打包产物**成立。
 

@@ -88,6 +88,22 @@ jobs:
             || { echo "宿主布局不符合预期：缺少 @deepseek-ai/dsh/lib/bin.js"; exit 1; }
           node -e "const fs=require('fs');console.log('宿主 dsh-app-boot 版本 =', JSON.parse(fs.readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)"
 
+      # 测试支撑包（`dsh-llm-replay` / `dsh-session-snapshot`）与 DSH **同步发版**，
+      # 且把自己的 peer 钉成**精确版本** —— 于是宿主自带的兼容性预检会禁用"来自另一条
+      # 线"的那一份，replay 车道便无法运行。所以必须按**宿主自己的版本**装这两份，
+      # 让 resolveInstalledPackage 取到宿主里匹配的那一份。
+      #
+      # 不要用 dist-tag 取它们：两个包的 dist-tag 与 `@deepseek-ai/dsh` **不一致**
+      # （replay 的 latest 是 0.0.1-rc.1，而 dsh 的 latest 是 0.2.0-rc.2），照 tag 装
+      # 会装出跨线的组合。一律以宿主实际版本为准。
+      - name: 安装与宿主匹配的测试支撑包
+        run: |
+          HOST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)")
+          echo "按宿主版本安装测试支撑包：$HOST_VERSION"
+          npm install --no-audit --no-fund --no-save --prefix "$HOST_DIR" \
+            "@deepseek-ai/dsh-llm-replay@$HOST_VERSION" \
+            "@deepseek-ai/dsh-session-snapshot@$HOST_VERSION"
+
       - name: Install testkit deps
         working-directory: packages/testkit
         run: npm ci --no-audit --no-fund
@@ -119,7 +135,8 @@ jobs:
 
           skipped=$(grep -oP 'skipped \K\d+' /tmp/unit.log | tail -1)
           echo "skipped = ${skipped:-未知}"
-          # 只允许那 2 例 fixture 用例跳过。多跳一个都说明真实宿主没被用上。
+          # 只允许那 2 例 fixture 用例跳过。多跳一个都说明真实宿主没被用上 ——
+          # 包括"测试支撑包与宿主不同版本"（那会让 replay 车道自己跳过）。
           if [ "${skipped:-99}" -gt 2 ]; then
             echo "::error::跳过了 ${skipped} 例（预期 ≤2，且只能是 replay fixture 用例）"
             grep -E '^﹣ ' /tmp/unit.log
@@ -176,6 +193,16 @@ jobs:
           test -f "$HOST_DIR/node_modules/@deepseek-ai/dsh/lib/bin.js" \
             || { echo "宿主布局不符合预期：缺少 @deepseek-ai/dsh/lib/bin.js"; exit 1; }
           node -e "const fs=require('fs');console.log('宿主 dsh-app-boot 版本 =', JSON.parse(fs.readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)"
+
+      # 同 real-host：测试支撑包必须与宿主同版本（peer 是精确版本）。这里刻意
+      # **按宿主解析出的版本**装，而不是按 dist-tag —— 两者的 tag 映射并不一致。
+      - name: 安装与宿主匹配的测试支撑包
+        run: |
+          HOST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.HOST_DIR+'/node_modules/@deepseek-ai/dsh-app-boot/package.json','utf8')).version)")
+          echo "按宿主版本安装测试支撑包：$HOST_VERSION"
+          npm install --no-audit --no-fund --no-save --prefix "$HOST_DIR" \
+            "@deepseek-ai/dsh-llm-replay@$HOST_VERSION" \
+            "@deepseek-ai/dsh-session-snapshot@$HOST_VERSION"
 
       - name: Install testkit deps
         working-directory: packages/testkit

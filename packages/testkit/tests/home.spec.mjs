@@ -15,7 +15,16 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { DEFAULT_TEST_BUNDLES, createTestHome, testHomeArgs, testHomeEnv, withKeyEnv } from '../src/home.mjs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import {
+  DEFAULT_TEST_BUNDLES,
+  createTestHome,
+  resolveInstalledPackage,
+  testHomeArgs,
+  testHomeEnv,
+  withKeyEnv,
+} from '../src/home.mjs'
 import { runLauncher, skipIfUnspawnable } from './spawn-support.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -184,5 +193,35 @@ test('extraFiles 相对 profileDir 写入 —— compatibility.json 才能放对
     assert.ok(!existsSync(join(home.homeDir, 'compatibility.json')))
   } finally {
     home.cleanup()
+  }
+})
+
+test('resolveInstalledPackage：优先取宿主里的那一份，缺失时回退到本包锁定的版本', () => {
+  // 测试支撑包（dsh-llm-replay / dsh-session-snapshot）的 peer 是**精确版本**，
+  // 只与自己那条宿主线兼容。所以"宿主里有没有这一份"决定了 replay 车道能不能跑，
+  // 这个解析顺序是那条车道的开关，值得钉住。
+  const original = process.env.DSH_HOST_NODE_MODULES
+  const root = mkdtempSync(join(tmpdir(), 'dsh-resolve-'))
+  const faked = '@deepseek-ai/dsh-llm-replay'
+  const hostDir = join(root, 'node_modules')
+  try {
+    mkdirSync(join(hostDir, faked), { recursive: true })
+    writeFileSync(join(hostDir, faked, 'package.json'), JSON.stringify({ name: faked, version: '9.9.9' }))
+
+    process.env.DSH_HOST_NODE_MODULES = hostDir
+    assert.equal(resolveInstalledPackage(faked), join(hostDir, faked), '宿主里有就应当取宿主的那一份')
+
+    // 宿主里没有 → 回退到本包依赖（真实存在，所以能解析出绝对路径）
+    process.env.DSH_HOST_NODE_MODULES = join(root, 'empty')
+    const fallback = resolveInstalledPackage(faked)
+    assert.ok(fallback.startsWith(join(here, '..')), `应回退到本包的依赖，实际 ${fallback}`)
+
+    // 未配置时同样回退（不再是"必须配宿主才能解析"）
+    delete process.env.DSH_HOST_NODE_MODULES
+    assert.equal(resolveInstalledPackage(faked), fallback)
+  } finally {
+    if (original === undefined) delete process.env.DSH_HOST_NODE_MODULES
+    else process.env.DSH_HOST_NODE_MODULES = original
+    rmSync(root, { recursive: true, force: true })
   }
 })

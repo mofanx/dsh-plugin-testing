@@ -28,7 +28,7 @@
  * @module dsh-plugin-testkit/home
  */
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -36,17 +36,35 @@ import { dirname, join } from 'node:path'
 const require = createRequire(import.meta.url)
 
 /**
- * Resolve a package that **this package** depends on, to its directory.
+ * Resolve a test-support package to its directory.
  *
  * Test-support packages (`dsh-llm-replay`, `dsh-session-snapshot`) are not part
  * of the DSH installation, so unlike the base bundles they must be present in
  * the profile. The testkit declares them as its own dependencies and links its
  * installed copies into each test home — pinned once, no per-test install.
  *
+ * **But a pinned copy only works against one host line.** Both packages are
+ * published in lockstep with DSH and narrow their peers to **exact** versions
+ * (`"@deepseek-ai/dsh-llm": "0.2.0-rc.2"`), so running the pinned copy against a
+ * different host makes the host's own preflight disable it — the replay lane
+ * then fails for a reason that has nothing to do with the code under test.
+ *
+ * Resolution therefore prefers a copy that ships **with the host under test**
+ * (`$DSH_HOST_NODE_MODULES`), and falls back to this package's own pinned copy.
+ * A caller who installs the host-matched version alongside the host gets the
+ * replay lane on any line; a caller who does not gets the pinned line, and the
+ * affected cases report the mismatch explicitly instead of failing obscurely
+ * (see `replay.spec.mjs`).
+ *
  * @param {string} name
  * @returns {string}
  */
 export function resolveInstalledPackage(name) {
+  const host = process.env.DSH_HOST_NODE_MODULES
+  if (host !== undefined && host !== '') {
+    const candidate = join(host, name, 'package.json')
+    if (existsSync(candidate)) return dirname(candidate)
+  }
   return dirname(require.resolve(`${name}/package.json`))
 }
 
